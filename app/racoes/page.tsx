@@ -12,8 +12,13 @@ export default function RacoesPage() {
           title="Nova marca de ração"
         >
           <form className="grid gap-4">
+            <input name="farmId" type="hidden" value="" />
             <FormField label="Nome da marca">
               <input className="field" maxLength={120} name="name" required type="text" />
+            </FormField>
+
+            <FormField label="Fabricante">
+              <input className="field" maxLength={120} name="manufacturer" type="text" />
             </FormField>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -24,6 +29,10 @@ export default function RacoesPage() {
                 <input className="field" min="0" name="pricePerBag" step="0.01" type="number" />
               </FormField>
             </div>
+
+            <FormField label="Proteína (%)">
+              <input className="field" max="100" min="0" name="proteinPercent" step="0.01" type="number" />
+            </FormField>
 
             <FormField label="Observações">
               <textarea className="field min-h-28 resize-y" maxLength={500} name="notes" />

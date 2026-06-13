@@ -12,6 +12,7 @@ export default function ProducaoPage() {
           title="Lançamento do dia"
         >
           <form className="grid gap-4">
+            <input name="farmId" type="hidden" value="" />
             <div className="grid gap-4 md:grid-cols-2">
               <FormField label="Data">
                 <input className="field" name="date" required type="date" />

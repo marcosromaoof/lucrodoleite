@@ -16,6 +16,10 @@ export default function ConfiguracoesPage() {
               <input className="field" maxLength={120} name="name" required type="text" />
             </FormField>
 
+            <FormField label="Responsável">
+              <input className="field" maxLength={120} name="ownerName" type="text" />
+            </FormField>
+
             <div className="grid gap-4 md:grid-cols-2">
               <FormField label="Cidade">
                 <input className="field" maxLength={120} name="city" type="text" />
@@ -27,6 +31,10 @@ export default function ConfiguracoesPage() {
 
             <FormField label="Preço padrão por litro">
               <input className="field" min="0" name="defaultPricePerLiter" step="0.0001" type="number" />
+            </FormField>
+
+            <FormField label="Laticínio comprador">
+              <input className="field" maxLength={120} name="milkCompany" type="text" />
             </FormField>
 
             <button className="primary-button" disabled type="button">

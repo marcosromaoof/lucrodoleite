@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 export const expenseCategories = [
-  "Racao",
+  "Ração",
   "Sal mineral",
   "Medicamentos",
-  "Veterinario",
+  "Veterinário",
   "Energia",
-  "Combustivel",
-  "Mao de obra",
-  "Manutencao",
+  "Combustível",
+  "Mão de obra",
+  "Manutenção",
   "Transporte",
   "Outras despesas",
 ] as const;
