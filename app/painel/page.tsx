@@ -17,15 +17,20 @@ import { EmptyChart } from "@/components/dashboard/empty-chart";
 import { FeedComparisonPanel } from "@/components/dashboard/feed-comparison-panel";
 import { IndicatorCard } from "@/components/dashboard/indicator-card";
 import { MetricCard } from "@/components/dashboard/metric-card";
+import { isDatabaseConfigured } from "@/lib/app/environment";
 
-const requiredSetup = [
-  "Conectar DATABASE_URL do Neon Postgres na Vercel",
-  "Rodar migrations Drizzle no banco real",
-  "Ativar autenticação e criar a primeira fazenda",
-  "Registrar produção real antes de exibir indicadores",
-];
+function getRequiredSetup(databaseConfigured: boolean) {
+  return [
+    databaseConfigured ? "DATABASE_URL detectada no deploy da Vercel" : "Conectar DATABASE_URL do Neon Postgres na Vercel",
+    "Rodar migrations Drizzle no banco real",
+    "Ativar autenticação e criar a primeira fazenda",
+    "Registrar produção real antes de exibir indicadores",
+  ];
+}
 
 export default function PainelPage() {
+  const requiredSetup = getRequiredSetup(isDatabaseConfigured());
+
   return (
     <AppShell activeHref="/painel" eyebrow="Projeto em implantação" title="Painel">
       <div className="space-y-4 p-4 sm:p-6">
