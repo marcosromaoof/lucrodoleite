@@ -1,7 +1,22 @@
-import { Database } from "lucide-react";
+import {
+  Beef,
+  CircleDollarSign,
+  Droplet,
+  FlaskConical,
+  HandCoins,
+  Milk,
+  PlusCircle,
+  Sprout,
+  Tag,
+  Wallet,
+} from "lucide-react";
 import { AppShell } from "@/components/app-shell/app-shell";
-import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
+import { DashboardAction } from "@/components/dashboard/dashboard-action";
+import { EmptyChart } from "@/components/dashboard/empty-chart";
+import { FeedComparisonPanel } from "@/components/dashboard/feed-comparison-panel";
+import { IndicatorCard } from "@/components/dashboard/indicator-card";
+import { MetricCard } from "@/components/dashboard/metric-card";
 
 const requiredSetup = [
   "Conectar DATABASE_URL do Neon Postgres na Vercel",
@@ -12,47 +27,54 @@ const requiredSetup = [
 
 export default function PainelPage() {
   return (
-    <AppShell activeHref="/painel" eyebrow="Projeto em implantação" title="Painel inicial">
-      <div className="grid gap-5 p-5 sm:p-8 xl:grid-cols-[1.2fr_0.8fr]">
-        <PageCard>
-          <div className="flex items-start gap-4">
-            <div className="grid size-12 shrink-0 place-items-center rounded-md bg-[var(--pasture)] text-[var(--farm-green)]">
-              <Database aria-hidden="true" size={25} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">Sem dados reais cadastrados</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-                Esta primeira tela não usa dados fictícios. Os indicadores de produção,
-                despesas, fechamento e ração só serão exibidos depois da conexão com o banco,
-                autenticação e registros reais da fazenda.
-              </p>
+    <AppShell activeHref="/painel" eyebrow="Projeto em implantação" title="Painel">
+      <div className="space-y-4 p-4 sm:p-6">
+        <section className="grid gap-3 xl:grid-cols-6">
+          <MetricCard helper="Sem registro hoje" icon={Milk} label="Produção do dia" />
+          <MetricCard helper="Total do mês" icon={Droplet} label="Litros no mês" tone="blue" />
+          <MetricCard helper="Médio no mês" icon={Tag} label="Preço por litro" />
+          <MetricCard helper="Total no mês" icon={Wallet} label="Despesas do mês" />
+          <MetricCard helper="No mês" icon={HandCoins} label="Lucro estimado" />
+          <MetricCard helper="No mês" icon={CircleDollarSign} label="Resultado por litro" />
+        </section>
+
+        <section className="grid gap-3 lg:grid-cols-3">
+          <DashboardAction href="/producao" icon={PlusCircle} label="Registrar produção" />
+          <DashboardAction href="/despesas" icon={Wallet} label="Lançar despesa" variant="wood" />
+          <DashboardAction href="/racoes" icon={FlaskConical} label="Novo teste de ração" variant="outline" />
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+          <div className="rounded-lg border border-[var(--border)] bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-bold">Indicadores do mês</h2>
+            <div className="mt-4 grid divide-y divide-[var(--border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              <IndicatorCard icon={CircleDollarSign} label="Resultado líquido por litro" />
+              <IndicatorCard icon={Beef} label="Custo da ração por litro" tone="wood" />
+              <IndicatorCard icon={Sprout} label="Resultado livre após ração" />
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {requiredSetup.map((item) => (
-              <div className="rounded-md border border-[var(--border)] bg-[var(--milk-white)] p-4 text-sm font-medium" key={item}>
-                {item}
-              </div>
-            ))}
-          </div>
-        </PageCard>
+          <EmptyChart />
+        </section>
 
-        <PageCard title="Próxima entrega técnica">
-          <ul className="space-y-3 text-sm leading-6 text-[var(--muted)]">
-            <li>1. Configurar Neon na Vercel e aplicar migrations.</li>
-            <li>2. Ativar autenticação e criação da primeira fazenda.</li>
-            <li>3. Persistir produção, despesas e fechamento mensal.</li>
-            <li>4. Gerar relatórios exportáveis com dados reais.</li>
-          </ul>
-        </PageCard>
+        <FeedComparisonPanel />
 
-        <div className="xl:col-span-2">
+        <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <SetupCallout title="Validação de banco">
             Depois de configurar `DATABASE_URL`, acesse <code>/api/health</code> no deploy para
             confirmar se o Postgres responde antes de liberar cadastros.
           </SetupCallout>
-        </div>
+          <div className="rounded-lg border border-[var(--border)] bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-bold">Checklist técnico</h2>
+            <div className="mt-4 grid gap-2">
+              {requiredSetup.map((item) => (
+                <div className="rounded-md border border-[var(--border)] bg-[var(--milk-white)] px-3 py-2 text-sm font-semibold" key={item}>
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </div>
     </AppShell>
   );

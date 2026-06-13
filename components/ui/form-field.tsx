@@ -5,7 +5,7 @@ type FormFieldProps = {
 
 export function FormField({ label, children }: FormFieldProps) {
   return (
-    <label className="grid gap-2 text-sm font-semibold text-[var(--foreground)]">
+    <label className="grid gap-2 text-sm font-semibold text-[color:var(--foreground)]">
       <span>{label}</span>
       {children}
     </label>
