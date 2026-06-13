@@ -7,6 +7,7 @@ import { productionSchema } from "@/lib/validations/production";
 import { farmScopedSchema } from "@/lib/validations/scoped";
 import { requireDatabaseConfigured } from "@/lib/actions/guards";
 import { success, validationError, type ActionState } from "@/lib/actions/action-state";
+import { revalidatePath } from "next/cache";
 
 export async function createProductionAction(formData: FormData): Promise<ActionState> {
   const parsed = productionSchema
@@ -32,8 +33,13 @@ export async function createProductionAction(formData: FormData): Promise<Action
 
   try {
     const created = await createDailyProduction(getDb(), parsed.data);
+    revalidatePath("/", "layout");
     return success("Produção salva com sucesso.", created?.id);
   } catch {
     return validationError("Não foi possível salvar a produção agora.");
   }
+}
+
+export async function submitProductionForm(formData: FormData): Promise<void> {
+  await createProductionAction(formData);
 }

@@ -1,17 +1,32 @@
 import Link from "next/link";
-import { Bell, CalendarDays, ChevronDown, Milk, RefreshCcw } from "lucide-react";
+import { Bell, CalendarDays, Milk, RefreshCcw } from "lucide-react";
 import { getDatabaseStatusLabel, isDatabaseConfigured } from "@/lib/app/environment";
 import { navigationItems } from "@/lib/app/navigation";
+import type { FarmOption } from "@/lib/repositories/farms";
 
 type AppShellProps = {
   activeHref: string;
+  activeFarmId?: string;
   title: string;
   eyebrow: string;
+  farms?: FarmOption[];
+  referenceMonth?: string;
+  referenceMonthLabel?: string;
   children: React.ReactNode;
 };
 
-export function AppShell({ activeHref, title, eyebrow, children }: AppShellProps) {
+export function AppShell({
+  activeFarmId = "",
+  activeHref,
+  title,
+  eyebrow,
+  farms = [],
+  referenceMonth = "",
+  referenceMonthLabel = "Mês de referência",
+  children,
+}: AppShellProps) {
   const databaseConfigured = isDatabaseConfigured();
+  const activeFarm = farms.find((farm) => farm.id === activeFarmId) ?? null;
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-2 py-2 text-[color:var(--foreground)] sm:px-3">
@@ -55,8 +70,10 @@ export function AppShell({ activeHref, title, eyebrow, children }: AppShellProps
 
           <div className="hidden px-4 pb-5 lg:absolute lg:bottom-0 lg:block lg:w-full">
             <div className="rounded-lg border border-white/22 bg-white/8 p-3">
-              <p className="text-sm font-bold">Fazenda não configurada</p>
-              <p className="text-xs text-white/70">Aguardando autenticação</p>
+              <p className="text-sm font-bold">{activeFarm?.name ?? "Fazenda não configurada"}</p>
+              <p className="text-xs text-white/70">
+                {activeFarm?.ownerName ?? activeFarm?.city ?? "Cadastre a primeira fazenda"}
+              </p>
             </div>
             <div className="mt-4 h-20 rounded-lg border border-white/12 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.08)),linear-gradient(135deg,transparent_0_40%,rgba(181,123,54,0.45)_40%_44%,transparent_44%_100%)]" />
           </div>
@@ -67,21 +84,55 @@ export function AppShell({ activeHref, title, eyebrow, children }: AppShellProps
             <div className="absolute inset-0 bg-[url('/assets/pasture-header.png')] bg-cover bg-center opacity-95" />
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,248,0.96)_0%,rgba(255,253,248,0.74)_36%,rgba(255,253,248,0.28)_100%)]" />
             <div className="relative z-10 flex flex-col justify-between gap-4 px-5 py-5 sm:px-8 lg:flex-row lg:items-start">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                <button className="inline-flex min-h-12 items-center gap-3 rounded-lg border border-[var(--border)] bg-white/86 px-4 text-base font-bold shadow-sm" type="button">
-                  Selecionar fazenda
-                  <ChevronDown aria-hidden="true" size={18} />
-                </button>
-                <button className="inline-flex min-h-12 items-center gap-3 rounded-lg border border-[var(--border)] bg-white/86 px-4 text-base font-bold shadow-sm" type="button">
+              <form className="flex flex-col gap-4 md:flex-row md:items-center" method="get">
+                <label className="sr-only" htmlFor="farmId">
+                  Fazenda
+                </label>
+                <select
+                  className="min-h-12 rounded-lg border border-[var(--border)] bg-white/86 px-4 text-base font-bold shadow-sm"
+                  disabled={farms.length === 0}
+                  id="farmId"
+                  name="farmId"
+                  defaultValue={activeFarmId}
+                >
+                  {farms.length === 0 ? <option value="">Cadastre uma fazenda</option> : null}
+                  {farms.map((farm) => (
+                    <option key={farm.id} value={farm.id}>
+                      {farm.name}
+                    </option>
+                  ))}
+                </select>
+
+                <label
+                  className="inline-flex min-h-12 items-center gap-3 rounded-lg border border-[var(--border)] bg-white/86 px-4 text-base font-bold shadow-sm"
+                  htmlFor="referenceMonth"
+                >
                   <CalendarDays aria-hidden="true" size={19} />
-                  Mês de referência
-                  <ChevronDown aria-hidden="true" size={18} />
+                  <span className="sr-only">Mês de referência</span>
+                  <input
+                    className="bg-transparent outline-none"
+                    id="referenceMonth"
+                    name="referenceMonth"
+                    type="month"
+                    defaultValue={referenceMonth}
+                  />
+                </label>
+
+                <button
+                  className="inline-flex min-h-12 items-center gap-2 rounded-lg border border-[var(--farm-green)] bg-white/90 px-4 text-sm font-black text-[color:var(--farm-green)] shadow-sm"
+                  type="submit"
+                >
+                  <RefreshCcw aria-hidden="true" size={18} />
+                  Aplicar
                 </button>
-              </div>
+              </form>
 
               <div className="flex flex-wrap items-center gap-3 text-sm font-semibold">
                 <span className="rounded-lg border border-[var(--border)] bg-white/88 px-3 py-2 text-[color:var(--muted)] shadow-sm">
                   {eyebrow}: {title}
+                </span>
+                <span className="rounded-lg border border-[var(--border)] bg-white/88 px-3 py-2 text-[color:var(--muted)] shadow-sm">
+                  {referenceMonthLabel}
                 </span>
                 <span className="rounded-lg border border-[var(--border)] bg-white/88 px-3 py-2 shadow-sm">
                   Banco:{" "}

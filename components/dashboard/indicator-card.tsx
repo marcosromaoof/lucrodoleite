@@ -3,10 +3,12 @@ import type { LucideIcon } from "lucide-react";
 type IndicatorCardProps = {
   icon: LucideIcon;
   label: string;
+  helper: string;
   tone?: "green" | "wood";
+  value: string;
 };
 
-export function IndicatorCard({ icon: Icon, label, tone = "green" }: IndicatorCardProps) {
+export function IndicatorCard({ icon: Icon, label, helper, tone = "green", value }: IndicatorCardProps) {
   return (
     <div className="grid min-h-48 place-items-center border-r border-[var(--border)] px-4 text-center last:border-r-0">
       <div>
@@ -16,8 +18,8 @@ export function IndicatorCard({ icon: Icon, label, tone = "green" }: IndicatorCa
           size={43}
         />
         <p className="mt-3 text-sm font-semibold leading-5">{label}</p>
-        <p className="mt-3 text-3xl font-black text-[color:var(--farm-green)]">--</p>
-        <p className="mt-2 text-xs text-[color:var(--muted)]">Aguardando dados</p>
+        <p className="mt-3 text-3xl font-black text-[color:var(--farm-green)]">{value}</p>
+        <p className="mt-2 text-xs text-[color:var(--muted)]">{helper}</p>
       </div>
     </div>
   );

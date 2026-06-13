@@ -1,18 +1,49 @@
+import { submitFeedBrandForm, submitFeedTestForm } from "@/app/racoes/actions";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
+import { getDb } from "@/db/client";
+import { getOperationalContext } from "@/lib/app/operational-context";
+import type { PageSearchParams } from "@/lib/app/search-params";
+import { getMonthDateRange } from "@/lib/dates/month";
+import { formatCurrency, formatLiters } from "@/lib/formatters/number";
+import { listFeedBrands } from "@/lib/repositories/feed-brands";
+import { listFeedTestResults } from "@/lib/repositories/feed-tests";
 
-export default function RacoesPage() {
+export const dynamic = "force-dynamic";
+
+type RacoesPageProps = {
+  searchParams?: PageSearchParams;
+};
+
+export default async function RacoesPage({ searchParams }: RacoesPageProps) {
+  const context = await getOperationalContext(searchParams);
+  const range = getMonthDateRange(context.referenceMonth);
+  const [brands, tests] = context.activeFarm
+    ? await Promise.all([
+        listFeedBrands(getDb(), context.activeFarm.id),
+        listFeedTestResults(getDb(), context.activeFarm.id),
+      ])
+    : [[], []];
+
   return (
-    <AppShell activeHref="/racoes" eyebrow="Teste de ração" title="Rações">
-      <div className="grid gap-5 p-5 sm:p-8 xl:grid-cols-[1fr_0.75fr]">
+    <AppShell
+      activeFarmId={context.activeFarmId}
+      activeHref="/racoes"
+      eyebrow="Teste de ração"
+      farms={context.farms}
+      referenceMonth={context.referenceMonth}
+      referenceMonthLabel={context.referenceMonthLabel}
+      title="Rações"
+    >
+      <div className="grid gap-5 p-5 sm:p-8 xl:grid-cols-[1fr_0.85fr]">
         <PageCard
           description="Cadastre marcas e compare custo, aumento de litros e lucro adicional por período."
           title="Nova marca de ração"
         >
-          <form className="grid gap-4">
-            <input name="farmId" type="hidden" value="" />
+          <form action={submitFeedBrandForm} className="grid gap-4">
+            <input name="farmId" type="hidden" value={context.activeFarmId} />
             <FormField label="Nome da marca">
               <input className="field" maxLength={120} name="name" required type="text" />
             </FormField>
@@ -38,19 +69,175 @@ export default function RacoesPage() {
               <textarea className="field min-h-28 resize-y" maxLength={500} name="notes" />
             </FormField>
 
-            <button className="primary-button" disabled type="button">
+            <button className="primary-button" disabled={!context.activeFarm} type="submit">
               Salvar marca
             </button>
           </form>
         </PageCard>
 
+        <PageCard
+          description="Informe a média antes da troca, a média durante o teste e o custo da ração no período."
+          title="Novo teste de ração"
+        >
+          <form action={submitFeedTestForm} className="grid gap-4">
+            <input name="farmId" type="hidden" value={context.activeFarmId} />
+
+            <FormField label="Nome do teste">
+              <input
+                className="field"
+                defaultValue={`Teste ${context.referenceMonthLabel}`}
+                maxLength={120}
+                name="name"
+                required
+                type="text"
+              />
+            </FormField>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField label="Ração cadastrada">
+                <select className="field" name="feedBrandId">
+                  <option value="">Sem vínculo</option>
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Nome exibido no comparativo">
+                <input className="field" maxLength={120} name="label" required type="text" />
+              </FormField>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField label="Início do teste">
+                <input className="field" defaultValue={range.startDate} name="periodStart" required type="date" />
+              </FormField>
+              <FormField label="Fim do teste">
+                <input className="field" defaultValue={range.endDate} name="periodEnd" required type="date" />
+              </FormField>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField label="Média diária antes">
+                <input className="field" min="0" name="baselineDailyLiters" required step="0.001" type="number" />
+              </FormField>
+              <FormField label="Média diária no teste">
+                <input className="field" min="0" name="testDailyLiters" required step="0.001" type="number" />
+              </FormField>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField label="Preço do leite por litro">
+                <input
+                  className="field"
+                  defaultValue={context.activeFarm?.defaultPricePerLiter?.toFixed(4)}
+                  min="0"
+                  name="milkPricePerLiter"
+                  required
+                  step="0.0001"
+                  type="number"
+                />
+              </FormField>
+              <FormField label="Custo da ração no período">
+                <input className="field" min="0" name="feedCostTotal" required step="0.01" type="number" />
+              </FormField>
+            </div>
+
+            <FormField label="Kg de ração por dia">
+              <input className="field" min="0" name="dailyFeedKg" step="0.001" type="number" />
+            </FormField>
+
+            <FormField label="Observações">
+              <textarea className="field min-h-24 resize-y" maxLength={500} name="notes" />
+            </FormField>
+
+            <button className="primary-button" disabled={!context.activeFarm} type="submit">
+              Calcular e salvar teste
+            </button>
+          </form>
+        </PageCard>
+
         <PageCard title="Comparativo de marcas">
-          <SetupCallout>
-            O comparativo entre marcas será calculado com produção e despesas reais vinculadas
-            aos testes de ração.
-          </SetupCallout>
+          {!context.activeFarm ? (
+            <SetupCallout title="Cadastre uma fazenda">
+              As rações precisam de uma fazenda ativa antes de serem salvas.
+            </SetupCallout>
+          ) : brands.length === 0 ? (
+            <SetupCallout title="Nenhuma marca cadastrada">
+              Cadastre marcas reais para comparar preço por kg e vincular testes de ração.
+            </SetupCallout>
+          ) : (
+            <div className="grid gap-3">
+              {brands.map((brand) => (
+                <div className="rounded-lg border border-[var(--border)] bg-[var(--milk-white)] p-4" key={brand.id}>
+                  <p className="font-bold">{brand.name}</p>
+                  <p className="text-sm text-[color:var(--muted)]">
+                    {brand.manufacturer ?? "Fabricante não informado"}
+                  </p>
+                  <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                    <span>Saco: {brand.pricePerBag !== null ? formatCurrency(brand.pricePerBag) : "sem preço"}</span>
+                    <span>
+                      Preço/kg: {brand.pricePerKg !== null ? formatCurrency(brand.pricePerKg) : "sem cálculo"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </PageCard>
+
+        <PageCard title="Resultados dos testes">
+          {!context.activeFarm ? (
+            <SetupCallout title="Cadastre uma fazenda">
+              Os testes de ração precisam de uma fazenda ativa.
+            </SetupCallout>
+          ) : tests.length === 0 ? (
+            <SetupCallout title="Nenhum teste registrado">
+              Lance testes reais para comparar aumento de litros, custo e lucro adicional por ração.
+            </SetupCallout>
+          ) : (
+            <div className="grid gap-3">
+              {tests.map((test) => (
+                <div className="rounded-lg border border-[var(--border)] bg-[var(--milk-white)] p-4" key={test.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-bold">{test.label}</p>
+                      <p className="text-sm text-[color:var(--muted)]">
+                        {test.testName} | {test.startDate} a {test.endDate}
+                      </p>
+                    </div>
+                    <span
+                      className={
+                        test.compensated === "yes"
+                          ? "rounded-md bg-[var(--farm-green)] px-2 py-1 text-xs font-black text-white"
+                          : "rounded-md bg-[var(--wood)] px-2 py-1 text-xs font-black text-white"
+                      }
+                    >
+                      {test.compensated === "yes" ? "Compensou" : test.compensated === "no" ? "Não compensou" : "Empatou"}
+                    </span>
+                  </div>
+                  <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+                    <ResultMetric label="Aumento diário" value={formatLiters(test.extraDailyLiters ?? 0)} />
+                    <ResultMetric label="Receita extra" value={formatCurrency(test.extraRevenue ?? 0)} />
+                    <ResultMetric label="Lucro adicional" value={formatCurrency(test.additionalProfit)} />
+                  </div>
+                  <p className="mt-3 text-sm text-[color:var(--muted)]">{test.conclusion}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </PageCard>
       </div>
     </AppShell>
+  );
+}
+
+function ResultMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-[var(--border)] bg-white p-3">
+      <span className="block text-xs font-semibold text-[color:var(--muted)]">{label}</span>
+      <strong className="mt-1 block text-base">{value}</strong>
+    </div>
   );
 }

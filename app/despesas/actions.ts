@@ -7,6 +7,7 @@ import { expenseSchema } from "@/lib/validations/expense";
 import { farmScopedSchema } from "@/lib/validations/scoped";
 import { requireDatabaseConfigured } from "@/lib/actions/guards";
 import { success, validationError, type ActionState } from "@/lib/actions/action-state";
+import { revalidatePath } from "next/cache";
 
 export async function createExpenseAction(formData: FormData): Promise<ActionState> {
   const parsed = expenseSchema
@@ -35,8 +36,13 @@ export async function createExpenseAction(formData: FormData): Promise<ActionSta
 
   try {
     const created = await createExpense(getDb(), parsed.data);
+    revalidatePath("/", "layout");
     return success("Despesa salva com sucesso.", created?.id);
   } catch {
     return validationError("Não foi possível salvar a despesa agora.");
   }
+}
+
+export async function submitExpenseForm(formData: FormData): Promise<void> {
+  await createExpenseAction(formData);
 }

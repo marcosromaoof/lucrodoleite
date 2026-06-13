@@ -6,6 +6,7 @@ import { readNumber, readRequiredString, readString } from "@/lib/forms/form-dat
 import { farmSchema } from "@/lib/validations/farm";
 import { requireDatabaseConfigured } from "@/lib/actions/guards";
 import { success, validationError, type ActionState } from "@/lib/actions/action-state";
+import { revalidatePath } from "next/cache";
 
 export async function createFarmAction(formData: FormData): Promise<ActionState> {
   const parsed = farmSchema.safeParse({
@@ -29,8 +30,13 @@ export async function createFarmAction(formData: FormData): Promise<ActionState>
 
   try {
     const created = await createFarm(getDb(), parsed.data);
+    revalidatePath("/", "layout");
     return success("Fazenda salva com sucesso.", created?.id);
   } catch {
     return validationError("Não foi possível salvar a fazenda agora.");
   }
+}
+
+export async function submitFarmForm(formData: FormData): Promise<void> {
+  await createFarmAction(formData);
 }
