@@ -16,8 +16,8 @@ if (!hasDatabaseUrl) {
 
 console.log("Running Drizzle migrations for Vercel production...");
 
-const result = spawnSync("npm", ["run", "db:migrate"], {
-  shell: true,
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+const result = spawnSync(npmCommand, ["run", "db:migrate"], {
   stdio: "inherit",
 });
 
