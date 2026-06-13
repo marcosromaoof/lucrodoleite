@@ -99,6 +99,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
   const chartRows = buildChartRows(productions, expenses);
   const hasFarm = Boolean(context.activeFarm);
   const hasProduction = productionSummary.recordCount > 0;
+  const hasEstimate = pricePerLiter > 0 && hasProduction;
 
   return (
     <AppShell
@@ -145,8 +146,8 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
             helper="Receita estimada - despesas"
             icon={HandCoins}
             label="Lucro estimado"
-            status={pricePerLiter > 0 && hasProduction ? "Calculado" : "Aguardando preço/litros"}
-            value={pricePerLiter > 0 && hasFarm ? formatCurrency(estimate.estimatedProfit) : "--"}
+            status={hasEstimate ? "Calculado" : hasProduction ? "Aguardando preço" : "Aguardando produção"}
+            value={hasEstimate ? formatCurrency(estimate.estimatedProfit) : "--"}
           />
           <MetricCard
             helper="Lucro estimado por litro"

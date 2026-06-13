@@ -98,6 +98,16 @@ code {
   margin: 1rem auto 0;
 }
 
+.metric-value {
+  margin-top: 0.75rem;
+  min-height: 2.25rem;
+  overflow-wrap: anywhere;
+  font-size: 1.65rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.12;
+}
+
 .metric-icon-green {
   color: var(--farm-green);
 }
