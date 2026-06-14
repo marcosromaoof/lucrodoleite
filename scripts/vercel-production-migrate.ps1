@@ -2,7 +2,7 @@ param(
   [string]$ProjectName = "lucrodoleite",
   [string]$Scope = "marcos-projects-462af1c5",
   [string]$Environment = "production",
-  [string]$HealthUrl = "https://lucrodoleite.vercel.app/api/health",
+  [string]$HealthUrl = "https://lucrodoleite.com.br/api/health",
   [string]$EnvFile = ".env.vercel.production.local",
   [switch]$KeepEnvFile
 )
