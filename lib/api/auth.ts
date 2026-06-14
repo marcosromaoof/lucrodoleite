@@ -4,6 +4,7 @@ import { getDb } from "@/db/client";
 import { apiError } from "@/lib/api/responses";
 import { apiTokens, users } from "@/db/schema";
 import type { AppDatabase } from "@/lib/repositories/types";
+import { syncFarmMembershipsForEmail } from "@/lib/repositories/user-access";
 
 export type ApiAuthenticatedUser = {
   email: string | null;
@@ -107,6 +108,11 @@ export async function authenticateApiRequest(request: Request): Promise<
       updatedAt: new Date(),
     })
     .where(eq(apiTokens.id, row.tokenId));
+
+  await syncFarmMembershipsForEmail(db, {
+    email: row.email,
+    userId: row.id,
+  });
 
   return {
     error: null,

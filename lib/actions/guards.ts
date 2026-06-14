@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { getDb } from "@/db/client";
 import { isAuthConfigured, isDatabaseConfigured } from "@/lib/app/environment";
 import { userCanAccessFarm } from "@/lib/repositories/farms";
+import { syncFarmMembershipsForEmail } from "@/lib/repositories/user-access";
 import type { ActionState } from "./action-state";
 
 export type AuthenticatedActionUser = {
@@ -46,6 +47,13 @@ export async function requireAuthenticatedUser(): Promise<
         },
         user: null,
       };
+    }
+
+    if (isDatabaseConfigured()) {
+      await syncFarmMembershipsForEmail(getDb(), {
+        email: session.user.email,
+        userId,
+      });
     }
 
     return {

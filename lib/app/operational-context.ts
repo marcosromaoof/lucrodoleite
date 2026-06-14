@@ -6,6 +6,7 @@ import { formatReferenceMonth, normalizeMonthKey } from "@/lib/dates/month";
 import { listFarmsForUser, type FarmOption } from "@/lib/repositories/farms";
 import { redirect } from "next/navigation";
 import { getOptionalSession } from "@/lib/auth/session";
+import { syncFarmMembershipsForEmail } from "@/lib/repositories/user-access";
 
 export type OperationalContext = {
   activeFarm: FarmOption | null;
@@ -38,7 +39,14 @@ export async function getOperationalContext(searchParams?: PageSearchParams): Pr
   }
 
   try {
-    const farms = await listFarmsForUser(getDb(), userId);
+    const db = getDb();
+
+    await syncFarmMembershipsForEmail(db, {
+      email: session?.user?.email,
+      userId,
+    });
+
+    const farms = await listFarmsForUser(db, userId);
     const farmIdParam = await getSearchParam(searchParams, "farmId");
     const activeFarm = farms.find((farm) => farm.id === farmIdParam) ?? farms[0] ?? null;
 

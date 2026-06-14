@@ -7,6 +7,7 @@ import { accounts, users } from "@/db/schema";
 import { isDatabaseConfigured } from "@/lib/app/environment";
 import { createApiToken } from "@/lib/api/auth";
 import { apiError, apiOk, zodError } from "@/lib/api/responses";
+import { findUserByEmailCaseInsensitive, syncFarmMembershipsForEmail } from "@/lib/repositories/user-access";
 
 export const runtime = "nodejs";
 
@@ -55,6 +56,12 @@ export async function POST(request: Request) {
       name: payload.name ?? payload.email,
       providerAccountId: payload.sub,
     });
+
+    await syncFarmMembershipsForEmail(db, {
+      email: user.email,
+      userId: user.id,
+    });
+
     const apiToken = await createApiToken(db, {
       name: parsed.data.tokenName ?? "Android",
       userId: user.id,
@@ -101,16 +108,7 @@ async function findOrCreateGoogleUser(
     return accountUser;
   }
 
-  const [emailUser] = await db
-    .select({
-      email: users.email,
-      id: users.id,
-      image: users.image,
-      name: users.name,
-    })
-    .from(users)
-    .where(eq(users.email, input.email))
-    .limit(1);
+  const emailUser = await findUserByEmailCaseInsensitive(db, input.email);
 
   const user =
     emailUser ??
