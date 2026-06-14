@@ -4,6 +4,16 @@ import type { AppDatabase } from "./types";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 
 const feedExpenseCategory = expenseCategories[0];
+const silageExpenseCategory = expenseCategories[1];
+const mineralExpenseCategory = expenseCategories[2];
+
+export type ExpenseSummary = {
+  feedAmount: number;
+  mineralAmount: number;
+  nutritionAmount: number;
+  silageAmount: number;
+  totalAmount: number;
+};
 
 export type CreateExpenseInput = NormalizedExpenseInput & {
   farmId: string;
@@ -88,17 +98,26 @@ export async function getMonthlyExpenseSummary(
   farmId: string,
   startDate: string,
   endDate: string,
-) {
+): Promise<ExpenseSummary> {
   const [summary] = await db
     .select({
       feedAmount: sql<string>`coalesce(sum(${expenses.amount}) filter (where ${expenses.category} = ${feedExpenseCategory}), 0)`,
+      mineralAmount: sql<string>`coalesce(sum(${expenses.amount}) filter (where ${expenses.category} = ${mineralExpenseCategory}), 0)`,
+      silageAmount: sql<string>`coalesce(sum(${expenses.amount}) filter (where ${expenses.category} = ${silageExpenseCategory}), 0)`,
       totalAmount: sql<string>`coalesce(sum(${expenses.amount}), 0)`,
     })
     .from(expenses)
     .where(and(eq(expenses.farmId, farmId), gte(expenses.date, startDate), lte(expenses.date, endDate)));
 
+  const feedAmount = Number(summary?.feedAmount ?? 0);
+  const mineralAmount = Number(summary?.mineralAmount ?? 0);
+  const silageAmount = Number(summary?.silageAmount ?? 0);
+
   return {
-    feedAmount: Number(summary?.feedAmount ?? 0),
+    feedAmount,
+    mineralAmount,
+    nutritionAmount: feedAmount + silageAmount + mineralAmount,
+    silageAmount,
     totalAmount: Number(summary?.totalAmount ?? 0),
   };
 }
@@ -126,17 +145,26 @@ export async function getMonthlyExpenseSummaryByReferenceMonth(
   db: AppDatabase,
   farmId: string,
   referenceMonth: string,
-) {
+): Promise<ExpenseSummary> {
   const [summary] = await db
     .select({
       feedAmount: sql<string>`coalesce(sum(${expenses.amount}) filter (where ${expenses.category} = ${feedExpenseCategory}), 0)`,
+      mineralAmount: sql<string>`coalesce(sum(${expenses.amount}) filter (where ${expenses.category} = ${mineralExpenseCategory}), 0)`,
+      silageAmount: sql<string>`coalesce(sum(${expenses.amount}) filter (where ${expenses.category} = ${silageExpenseCategory}), 0)`,
       totalAmount: sql<string>`coalesce(sum(${expenses.amount}), 0)`,
     })
     .from(expenses)
     .where(and(eq(expenses.farmId, farmId), eq(expenses.referenceMonth, referenceMonth)));
 
+  const feedAmount = Number(summary?.feedAmount ?? 0);
+  const mineralAmount = Number(summary?.mineralAmount ?? 0);
+  const silageAmount = Number(summary?.silageAmount ?? 0);
+
   return {
-    feedAmount: Number(summary?.feedAmount ?? 0),
+    feedAmount,
+    mineralAmount,
+    nutritionAmount: feedAmount + silageAmount + mineralAmount,
+    silageAmount,
     totalAmount: Number(summary?.totalAmount ?? 0),
   };
 }

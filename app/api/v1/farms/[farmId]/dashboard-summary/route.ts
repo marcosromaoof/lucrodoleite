@@ -47,10 +47,12 @@ export async function GET(request: Request, context: DashboardSummaryRouteContex
   const pricePerLiter = farm?.defaultPricePerLiter ?? 0;
   const estimate = calculateMonthlyEstimate({
     estimatedPricePerLiter: pricePerLiter,
+    totalNutritionAmount: expenseSummary.nutritionAmount,
     totalExpenses: expenseSummary.totalAmount,
     totalLiters: productionSummary.totalLiters,
   });
   const feedCostPerLiter = safeDivide(expenseSummary.feedAmount, productionSummary.totalLiters);
+  const nutritionCostPerLiter = safeDivide(expenseSummary.nutritionAmount, productionSummary.totalLiters);
 
   return apiOk({
     expenseSummary,
@@ -65,6 +67,8 @@ export async function GET(request: Request, context: DashboardSummaryRouteContex
     periodEnd: range.endDate,
     periodStart: range.startDate,
     referenceMonth,
+    nutritionCostPerLiter,
+    resultAfterNutritionPerLiter: pricePerLiter - nutritionCostPerLiter,
     resultAfterFeedPerLiter: pricePerLiter - feedCostPerLiter,
     resultEstimate: estimate,
   });

@@ -1,5 +1,6 @@
 import {
   appSettings,
+  cows,
   dailyProductions,
   expenses,
   farmMembers,
@@ -227,6 +228,7 @@ export async function farmHasLinkedData(db: AppDatabase, farmId: string) {
     db.select({ id: feedBrands.id }).from(feedBrands).where(eq(feedBrands.farmId, farmId)).limit(1),
     db.select({ id: feedTests.id }).from(feedTests).where(eq(feedTests.farmId, farmId)).limit(1),
     db.select({ id: monthlyClosings.id }).from(monthlyClosings).where(eq(monthlyClosings.farmId, farmId)).limit(1),
+    db.select({ id: cows.id }).from(cows).where(eq(cows.farmId, farmId)).limit(1),
     db.select({ id: reportExports.id }).from(reportExports).where(eq(reportExports.farmId, farmId)).limit(1),
     db.select({ id: appSettings.id }).from(appSettings).where(eq(appSettings.farmId, farmId)).limit(1),
   ]);

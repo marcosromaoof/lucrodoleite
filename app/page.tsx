@@ -24,7 +24,7 @@ export default async function Home() {
               Gestao leiteira com resultado na ponta do lapis
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-8 text-[color:var(--muted)]">
-              Controle producao, despesas, racoes, fechamento mensal e relatorios da fazenda em uma area segura,
+              Controle producao, vacas, despesas, racoes, fechamento mensal e relatorios da fazenda em uma area segura,
               preparada para integracao futura com aplicativo Android.
             </p>
 

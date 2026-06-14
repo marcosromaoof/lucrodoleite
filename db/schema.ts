@@ -113,6 +113,28 @@ export const farms = pgTable("farms", {
   ...timestamps,
 });
 
+export const cows = pgTable(
+  "cows",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    farmId: uuid("farm_id")
+      .notNull()
+      .references(() => farms.id, { onDelete: "cascade" }),
+    identification: text("identification").notNull(),
+    name: text("name"),
+    breed: text("breed"),
+    birthDate: date("birth_date"),
+    status: text("status").notNull().default("active"),
+    notes: text("notes"),
+    createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("cows_farm_identification_unique").on(table.farmId, table.identification),
+    index("cows_farm_status_idx").on(table.farmId, table.status),
+  ],
+);
+
 export const farmMembers = pgTable(
   "farm_members",
   {
@@ -127,6 +149,60 @@ export const farmMembers = pgTable(
     ...timestamps,
   },
   (table) => [uniqueIndex("farm_members_farm_user_unique").on(table.farmId, table.userId)],
+);
+
+export const cowEvaluations = pgTable(
+  "cow_evaluations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    farmId: uuid("farm_id")
+      .notNull()
+      .references(() => farms.id, { onDelete: "cascade" }),
+    cowId: uuid("cow_id")
+      .notNull()
+      .references(() => cows.id),
+    name: text("name").notNull(),
+    baselineStartDate: date("baseline_start_date").notNull(),
+    baselineEndDate: date("baseline_end_date").notNull(),
+    testStartDate: date("test_start_date").notNull(),
+    testEndDate: date("test_end_date").notNull(),
+    milkPricePerLiter: numeric("milk_price_per_liter", { precision: 12, scale: 4 }).notNull(),
+    notes: text("notes"),
+    createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (table) => [
+    index("cow_evaluations_farm_idx").on(table.farmId),
+    index("cow_evaluations_cow_idx").on(table.cowId),
+  ],
+);
+
+export const cowEvaluationEntries = pgTable(
+  "cow_evaluation_entries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    farmId: uuid("farm_id")
+      .notNull()
+      .references(() => farms.id, { onDelete: "cascade" }),
+    evaluationId: uuid("evaluation_id")
+      .notNull()
+      .references(() => cowEvaluations.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    phase: text("phase").notNull(),
+    liters: numeric("liters", { precision: 12, scale: 3 }).notNull(),
+    feedKg: numeric("feed_kg", { precision: 12, scale: 3 }),
+    feedPricePerKg: numeric("feed_price_per_kg", { precision: 12, scale: 4 }),
+    silageKg: numeric("silage_kg", { precision: 12, scale: 3 }),
+    silagePricePerKg: numeric("silage_price_per_kg", { precision: 12, scale: 4 }),
+    otherCosts: numeric("other_costs", { precision: 12, scale: 2 }),
+    notes: text("notes"),
+    createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("cow_entries_evaluation_date_phase_unique").on(table.evaluationId, table.date, table.phase),
+    index("cow_entries_farm_date_idx").on(table.farmId, table.date),
+  ],
 );
 
 export const feedBrands = pgTable("feed_brands", {
@@ -219,8 +295,12 @@ export const monthlyClosings = pgTable(
     milkInvoiceAmount: numeric("milk_invoice_amount", { precision: 12, scale: 2 }).notNull(),
     realPricePerLiter: numeric("real_price_per_liter", { precision: 12, scale: 4 }).notNull(),
     totalFeedAmount: numeric("total_feed_amount", { precision: 12, scale: 2 }).notNull(),
+    totalSilageAmount: numeric("total_silage_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+    totalMineralAmount: numeric("total_mineral_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+    totalNutritionAmount: numeric("total_nutrition_amount", { precision: 12, scale: 2 }).notNull().default("0"),
     totalExpenses: numeric("total_expenses", { precision: 12, scale: 2 }).notNull(),
     feedCostPerLiter: numeric("feed_cost_per_liter", { precision: 12, scale: 4 }).notNull(),
+    nutritionCostPerLiter: numeric("nutrition_cost_per_liter", { precision: 12, scale: 4 }).notNull().default("0"),
     totalCostPerLiter: numeric("total_cost_per_liter", { precision: 12, scale: 4 }).notNull(),
     grossResultPerLiter: numeric("gross_result_per_liter", {
       precision: 12,
@@ -230,6 +310,11 @@ export const monthlyClosings = pgTable(
       precision: 12,
       scale: 4,
     }).notNull(),
+    resultAfterNutritionPerLiter: numeric("result_after_nutrition_per_liter", {
+      precision: 12,
+      scale: 4,
+    }).notNull().default("0"),
+    freeProfitAfterNutrition: numeric("free_profit_after_nutrition", { precision: 12, scale: 2 }).notNull().default("0"),
     netResultPerLiter: numeric("net_result_per_liter", { precision: 12, scale: 4 }).notNull(),
     netProfit: numeric("net_profit", { precision: 12, scale: 2 }).notNull(),
     closedBy: text("closed_by").references(() => users.id, { onDelete: "set null" }),

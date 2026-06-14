@@ -163,7 +163,7 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
         <PageCard title="Fazendas cadastradas">
           {context.farms.length === 0 ? (
             <SetupCallout title="Nenhuma fazenda cadastrada">
-              Cadastre a primeira fazenda para liberar produção, despesas, rações e relatórios.
+              Cadastre a primeira fazenda para liberar produção, vacas, despesas, rações e relatórios.
             </SetupCallout>
           ) : (
             <div className="grid gap-3">

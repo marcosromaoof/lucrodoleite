@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const protectedRoutes = [
   "/painel",
   "/producao",
+  "/vacas",
   "/despesas",
   "/fechamento",
   "/racoes",
@@ -28,6 +29,7 @@ export const config = {
   matcher: [
     "/painel/:path*",
     "/producao/:path*",
+    "/vacas/:path*",
     "/despesas/:path*",
     "/fechamento/:path*",
     "/racoes/:path*",

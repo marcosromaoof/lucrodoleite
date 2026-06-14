@@ -32,7 +32,7 @@ export async function AppShell({
   const session = await getOptionalSession();
   const activeFarm = farms.find((farm) => farm.id === activeFarmId) ?? null;
   const userInitials = getInitials(session?.user?.name ?? session?.user?.email ?? "LL");
-  const mobilePrimaryHrefs = new Set(["/painel", "/producao", "/despesas", "/racoes"]);
+  const mobilePrimaryHrefs = new Set(["/painel", "/producao", "/vacas", "/despesas"]);
   const mobilePrimaryItems = navigationItems.filter((item) => mobilePrimaryHrefs.has(item.href));
   const mobileMoreItems = navigationItems.filter((item) => !mobilePrimaryHrefs.has(item.href));
   const mobileMoreActive = mobileMoreItems.some((item) => item.href === activeHref);

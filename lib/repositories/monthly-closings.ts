@@ -13,6 +13,8 @@ export type SaveMonthlyClosingInput = MonthlyClosingResult & {
   totalExpenses: number;
   totalFeedAmount: number;
   totalLiters: number;
+  totalMineralAmount: number;
+  totalSilageAmount: number;
 };
 
 export type MonthlyClosingRecord = SaveMonthlyClosingInput & {
@@ -28,6 +30,7 @@ const monthlyClosingSelect = {
   closedAt: monthlyClosings.closedAt,
   farmId: monthlyClosings.farmId,
   feedCostPerLiter: monthlyClosings.feedCostPerLiter,
+  freeProfitAfterNutrition: monthlyClosings.freeProfitAfterNutrition,
   grossResultPerLiter: monthlyClosings.grossResultPerLiter,
   id: monthlyClosings.id,
   milkInvoiceAmount: monthlyClosings.milkInvoiceAmount,
@@ -39,10 +42,15 @@ const monthlyClosingSelect = {
   realPricePerLiter: monthlyClosings.realPricePerLiter,
   referenceMonth: monthlyClosings.referenceMonth,
   resultAfterFeedPerLiter: monthlyClosings.resultAfterFeedPerLiter,
+  resultAfterNutritionPerLiter: monthlyClosings.resultAfterNutritionPerLiter,
+  nutritionCostPerLiter: monthlyClosings.nutritionCostPerLiter,
   totalCostPerLiter: monthlyClosings.totalCostPerLiter,
   totalExpenses: monthlyClosings.totalExpenses,
   totalFeedAmount: monthlyClosings.totalFeedAmount,
   totalLiters: monthlyClosings.totalLiters,
+  totalMineralAmount: monthlyClosings.totalMineralAmount,
+  totalNutritionAmount: monthlyClosings.totalNutritionAmount,
+  totalSilageAmount: monthlyClosings.totalSilageAmount,
   year: monthlyClosings.year,
 };
 
@@ -50,6 +58,7 @@ type MonthlyClosingRow = {
   closedAt: Date | null;
   farmId: string;
   feedCostPerLiter: string;
+  freeProfitAfterNutrition: string;
   grossResultPerLiter: string;
   id: string;
   milkInvoiceAmount: string;
@@ -61,10 +70,15 @@ type MonthlyClosingRow = {
   realPricePerLiter: string;
   referenceMonth: string;
   resultAfterFeedPerLiter: string;
+  resultAfterNutritionPerLiter: string;
+  nutritionCostPerLiter: string;
   totalCostPerLiter: string;
   totalExpenses: string;
   totalFeedAmount: string;
   totalLiters: string;
+  totalMineralAmount: string;
+  totalNutritionAmount: string;
+  totalSilageAmount: string;
   year: number;
 };
 
@@ -74,6 +88,7 @@ export async function upsertMonthlyClosing(db: AppDatabase, input: SaveMonthlyCl
   const values = {
     farmId: input.farmId,
     feedCostPerLiter: input.feedCostPerLiter.toString(),
+    freeProfitAfterNutrition: input.freeProfitAfterNutrition.toString(),
     grossResultPerLiter: input.grossResultPerLiter.toString(),
     milkInvoiceAmount: input.milkInvoiceAmount.toString(),
     month,
@@ -84,10 +99,15 @@ export async function upsertMonthlyClosing(db: AppDatabase, input: SaveMonthlyCl
     realPricePerLiter: input.realPricePerLiter.toString(),
     referenceMonth: input.referenceMonth,
     resultAfterFeedPerLiter: input.resultAfterFeedPerLiter.toString(),
+    resultAfterNutritionPerLiter: input.resultAfterNutritionPerLiter.toString(),
+    nutritionCostPerLiter: input.nutritionCostPerLiter.toString(),
     totalCostPerLiter: input.totalCostPerLiter.toString(),
     totalExpenses: input.totalExpenses.toString(),
     totalFeedAmount: input.totalFeedAmount.toString(),
     totalLiters: input.totalLiters.toString(),
+    totalMineralAmount: input.totalMineralAmount.toString(),
+    totalNutritionAmount: input.totalNutritionAmount.toString(),
+    totalSilageAmount: input.totalSilageAmount.toString(),
     year,
   };
 
@@ -192,6 +212,7 @@ function mapMonthlyClosing(row: MonthlyClosingRow): MonthlyClosingRecord {
     closedAt: row.closedAt,
     farmId: row.farmId,
     feedCostPerLiter: Number(row.feedCostPerLiter),
+    freeProfitAfterNutrition: Number(row.freeProfitAfterNutrition),
     grossResultPerLiter: Number(row.grossResultPerLiter),
     id: row.id,
     milkInvoiceAmount: Number(row.milkInvoiceAmount),
@@ -203,10 +224,15 @@ function mapMonthlyClosing(row: MonthlyClosingRow): MonthlyClosingRecord {
     realPricePerLiter: Number(row.realPricePerLiter),
     referenceMonth: row.referenceMonth,
     resultAfterFeedPerLiter: Number(row.resultAfterFeedPerLiter),
+    resultAfterNutritionPerLiter: Number(row.resultAfterNutritionPerLiter),
+    nutritionCostPerLiter: Number(row.nutritionCostPerLiter),
     totalCostPerLiter: Number(row.totalCostPerLiter),
     totalExpenses: Number(row.totalExpenses),
     totalFeedAmount: Number(row.totalFeedAmount),
     totalLiters: Number(row.totalLiters),
+    totalMineralAmount: Number(row.totalMineralAmount),
+    totalNutritionAmount: Number(row.totalNutritionAmount),
+    totalSilageAmount: Number(row.totalSilageAmount),
     year: row.year,
   };
 }

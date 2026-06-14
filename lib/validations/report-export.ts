@@ -6,6 +6,7 @@ export const reportTypes = [
   "closing",
   "feed-brands",
   "feed-tests",
+  "cow-evaluations",
   "monthly-summary",
 ] as const;
 
@@ -16,6 +17,7 @@ export const reportTypeLabels: Record<(typeof reportTypes)[number], string> = {
   expenses: "Despesas por categoria",
   "feed-brands": "Marcas de ração",
   "feed-tests": "Testes de ração",
+  "cow-evaluations": "Avaliações vaca a vaca",
   "monthly-summary": "Resumo mensal",
   production: "Produção diária",
 };

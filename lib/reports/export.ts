@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import writeXlsxFile from "write-excel-file/node";
 import { getDb } from "@/db/client";
+import { summarizeCowEvaluation } from "@/lib/calculations/cow-evaluation";
 import { calculateMonthlyEstimate } from "@/lib/calculations/financial";
 import { formatReferenceMonth, getTodayDateKey } from "@/lib/dates/month";
 import { formatCurrency, formatLiters } from "@/lib/formatters/number";
@@ -10,6 +11,7 @@ import { listFeedBrands } from "@/lib/repositories/feed-brands";
 import { listFeedTestResults } from "@/lib/repositories/feed-tests";
 import { getMonthlyClosing } from "@/lib/repositories/monthly-closings";
 import { getMonthlyProductionSummary, listProductionsByMonth } from "@/lib/repositories/production";
+import { listCowEvaluationEntriesByFarm, listCowEvaluations } from "@/lib/repositories/cows";
 import { reportFormatLabels, reportTypeLabels } from "@/lib/validations/report-export";
 
 export type ReportColumn = {
@@ -172,6 +174,11 @@ export async function buildReportData(input: {
             { metric: "Valor total da nota", value: formatCurrency(closing.milkInvoiceAmount) },
             { metric: "Preco real por litro", value: formatCurrency(closing.realPricePerLiter) },
             { metric: "Despesa com racao", value: formatCurrency(closing.totalFeedAmount) },
+            { metric: "Despesa com silagem", value: formatCurrency(closing.totalSilageAmount) },
+            { metric: "Despesa com sal mineral", value: formatCurrency(closing.totalMineralAmount) },
+            { metric: "Custo de alimentacao", value: formatCurrency(closing.totalNutritionAmount) },
+            { metric: "Custo alimentacao por litro", value: formatCurrency(closing.nutritionCostPerLiter) },
+            { metric: "Lucro livre apos alimentacao", value: formatCurrency(closing.freeProfitAfterNutrition) },
             { metric: "Despesas totais", value: formatCurrency(closing.totalExpenses) },
             { metric: "Custo total por litro", value: formatCurrency(closing.totalCostPerLiter) },
             { metric: "Resultado liquido por litro", value: formatCurrency(closing.netResultPerLiter) },
@@ -183,12 +190,56 @@ export async function buildReportData(input: {
     };
   }
 
+  if (input.type === "cow-evaluations") {
+    const [evaluations, entries] = await Promise.all([
+      listCowEvaluations(db, input.farmId),
+      listCowEvaluationEntriesByFarm(db, input.farmId),
+    ]);
+    const entriesByEvaluation = new Map<string, typeof entries>();
+
+    for (const entry of entries) {
+      entriesByEvaluation.set(entry.evaluationId, [...(entriesByEvaluation.get(entry.evaluationId) ?? []), entry]);
+    }
+
+    return {
+      columns: [
+        { header: "Avaliacao", key: "evaluation" },
+        { header: "Vaca", key: "cow" },
+        { header: "Media sem racao", key: "baselineAverage" },
+        { header: "Media com racao", key: "testAverage" },
+        { header: "Aumento diario", key: "extraDailyLiters" },
+        { header: "Custo alimentacao", key: "nutritionCost" },
+        { header: "Lucro livre", key: "freeProfitAfterNutrition" },
+        { header: "Lucro liquido", key: "netProfit" },
+        { header: "Lucro adicional/dia", key: "additionalDailyProfit" },
+      ],
+      rows: evaluations.map((evaluation) => {
+        const summary = summarizeCowEvaluation(entriesByEvaluation.get(evaluation.id) ?? [], evaluation.milkPricePerLiter);
+
+        return {
+          additionalDailyProfit: summary.comparison.additionalDailyProfit,
+          baselineAverage: summary.baseline.averageDailyLiters,
+          cow: `${evaluation.cowIdentification}${evaluation.cowName ? ` - ${evaluation.cowName}` : ""}`,
+          evaluation: evaluation.name,
+          extraDailyLiters: summary.comparison.extraDailyLiters,
+          freeProfitAfterNutrition: summary.total.freeProfitAfterNutrition,
+          netProfit: summary.total.netProfit,
+          nutritionCost: summary.total.nutritionCost,
+          testAverage: summary.test.averageDailyLiters,
+        };
+      }),
+      subtitle,
+      title,
+    };
+  }
+
   const [productionSummary, expenseSummary] = await Promise.all([
     getMonthlyProductionSummary(db, input.farmId, input.referenceStart, input.referenceEnd, getTodayDateKey()),
     getMonthlyExpenseSummary(db, input.farmId, input.referenceStart, input.referenceEnd),
   ]);
   const estimate = calculateMonthlyEstimate({
     estimatedPricePerLiter: input.farmPricePerLiter,
+    totalNutritionAmount: expenseSummary.nutritionAmount,
     totalExpenses: expenseSummary.totalAmount,
     totalLiters: productionSummary.totalLiters,
   });
@@ -204,7 +255,11 @@ export async function buildReportData(input: {
       { metric: "Preco padrao por litro", value: formatCurrency(input.farmPricePerLiter) },
       { metric: "Despesas totais", value: formatCurrency(expenseSummary.totalAmount) },
       { metric: "Despesa com racao", value: formatCurrency(expenseSummary.feedAmount) },
+      { metric: "Despesa com silagem", value: formatCurrency(expenseSummary.silageAmount) },
+      { metric: "Despesa com sal mineral", value: formatCurrency(expenseSummary.mineralAmount) },
+      { metric: "Custo de alimentacao", value: formatCurrency(expenseSummary.nutritionAmount) },
       { metric: "Receita estimada", value: formatCurrency(estimate.estimatedRevenue) },
+      { metric: "Lucro livre apos alimentacao", value: formatCurrency(estimate.estimatedFreeProfitAfterNutrition) },
       { metric: "Lucro estimado", value: formatCurrency(estimate.estimatedProfit) },
       { metric: "Resultado estimado por litro", value: formatCurrency(estimate.estimatedResultPerLiter) },
     ],

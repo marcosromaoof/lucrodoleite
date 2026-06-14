@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const expenseCategories = [
   "Ração",
+  "Silagem",
   "Sal mineral",
   "Medicamentos",
   "Veterinário",
@@ -17,11 +18,12 @@ export const expenseQuantityEligibleCategories = [
   expenseCategories[0],
   expenseCategories[1],
   expenseCategories[2],
-  expenseCategories[5],
-  expenseCategories[8],
+  expenseCategories[3],
+  expenseCategories[6],
+  expenseCategories[9],
 ] as const;
 
-export const expenseUnits = ["kg", "saco", "un", "litro", "viagem"] as const;
+export const expenseUnits = ["kg", "tonelada", "saco", "un", "litro", "viagem"] as const;
 
 export const expenseSchema = z
   .object({

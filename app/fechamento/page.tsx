@@ -51,7 +51,7 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
       ])
     : [
         { recordCount: 0, todayLiters: 0, totalLiters: 0 },
-        { feedAmount: 0, totalAmount: 0 },
+        { feedAmount: 0, mineralAmount: 0, nutritionAmount: 0, silageAmount: 0, totalAmount: 0 },
       ];
 
   const projectedInvoice = productionSummary.totalLiters * (activeFarm?.defaultPricePerLiter ?? 0);
@@ -60,6 +60,8 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
     milkInvoiceAmount: invoiceAmount,
     totalExpenses: expenseSummary.totalAmount,
     totalFeedAmount: expenseSummary.feedAmount,
+    totalMineralAmount: expenseSummary.mineralAmount,
+    totalSilageAmount: expenseSummary.silageAmount,
     totalLiters: productionSummary.totalLiters,
   });
   const canClose = Boolean(context.activeFarm) && productionSummary.totalLiters > 0;
@@ -137,7 +139,9 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
           <div className="grid gap-3">
             <Indicator label="Preço real por litro" value={formatCurrency(preview.realPricePerLiter)} />
             <Indicator label="Custo da ração por litro" value={formatCurrency(preview.feedCostPerLiter)} />
+            <Indicator label="Custo da alimentação por litro" value={formatCurrency(preview.nutritionCostPerLiter)} />
             <Indicator label="Resultado livre após ração" value={formatCurrency(preview.resultAfterFeedPerLiter)} />
+            <Indicator label="Lucro livre após alimentação" value={formatCurrency(preview.freeProfitAfterNutrition)} />
             <Indicator label="Custo total por litro" value={formatCurrency(preview.totalCostPerLiter)} />
             <Indicator label="Resultado líquido por litro" value={formatCurrency(preview.netResultPerLiter)} />
             <Indicator label="Lucro líquido" value={formatCurrency(preview.netProfit)} emphasis />
@@ -200,7 +204,7 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
               />
             </FormField>
 
-            <div className="grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--milk-white)] p-4 text-sm md:grid-cols-3">
+            <div className="grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--milk-white)] p-4 text-sm md:grid-cols-4">
               <div>
                 <span className="text-[color:var(--muted)]">Período apurado</span>
                 <strong className="block text-base">{activeRangeLabel}</strong>
@@ -212,6 +216,10 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
               <div>
                 <span className="text-[color:var(--muted)]">Despesas totais</span>
                 <strong className="block text-lg">{formatCurrency(expenseSummary.totalAmount)}</strong>
+              </div>
+              <div>
+                <span className="text-[color:var(--muted)]">Alimentação</span>
+                <strong className="block text-lg">{formatCurrency(expenseSummary.nutritionAmount)}</strong>
               </div>
             </div>
 

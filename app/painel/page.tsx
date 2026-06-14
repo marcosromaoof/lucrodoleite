@@ -87,7 +87,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
       ])
     : [
         { recordCount: 0, todayLiters: 0, totalLiters: 0 },
-        { feedAmount: 0, totalAmount: 0 },
+        { feedAmount: 0, mineralAmount: 0, nutritionAmount: 0, silageAmount: 0, totalAmount: 0 },
         [],
         [],
         [],
@@ -97,11 +97,14 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
   const pricePerLiter = context.activeFarm?.defaultPricePerLiter ?? 0;
   const estimate = calculateMonthlyEstimate({
     estimatedPricePerLiter: pricePerLiter,
+    totalNutritionAmount: expenseSummary.nutritionAmount,
     totalExpenses: expenseSummary.totalAmount,
     totalLiters: productionSummary.totalLiters,
   });
   const feedCostPerLiter = safeDivide(expenseSummary.feedAmount, productionSummary.totalLiters);
+  const nutritionCostPerLiter = safeDivide(expenseSummary.nutritionAmount, productionSummary.totalLiters);
   const resultAfterFeedPerLiter = pricePerLiter - feedCostPerLiter;
+  const resultAfterNutritionPerLiter = pricePerLiter - nutritionCostPerLiter;
   const chartRows = buildChartRows(productions, expenses);
   const hasFarm = Boolean(context.activeFarm);
   const hasProduction = productionSummary.recordCount > 0;
@@ -113,7 +116,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
     <AppShell
       activeFarmId={context.activeFarmId}
       activeHref="/painel"
-      eyebrow="Projeto em implantação"
+      eyebrow="Gestão"
       farms={context.farms}
       referenceMonth={context.referenceMonth}
       referenceMonthLabel={context.referenceMonthLabel}
@@ -171,7 +174,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
         <section className="quick-action-grid">
           <DashboardAction href="/producao" icon={PlusCircle} label="Registrar produção" />
           <DashboardAction href="/despesas" icon={Wallet} label="Lançar despesa" variant="wood" />
-          <DashboardAction href="/racoes" icon={FlaskConical} label="Cadastrar ração" variant="outline" />
+          <DashboardAction href="/vacas" icon={Beef} label="Avaliar vaca" variant="outline" />
         </section>
 
         {!hasFarm ? (
@@ -197,15 +200,22 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
                 value={hasProduction ? formatCurrency(estimate.estimatedResultPerLiter) : "--"}
               />
               <IndicatorCard
-                helper={expenseSummary.feedAmount > 0 ? "Categoria Ração" : "Sem despesas de ração"}
+                helper={expenseSummary.nutritionAmount > 0 ? "Ração, silagem e sal mineral" : "Sem custos de alimentação"}
                 icon={Beef}
-                label="Custo da ração por litro"
+                label="Custo da alimentação por litro"
                 tone="wood"
-                value={hasProduction ? formatCurrency(feedCostPerLiter) : "--"}
+                value={hasProduction ? formatCurrency(nutritionCostPerLiter) : "--"}
+              />
+              <IndicatorCard
+                helper={hasProduction ? "Receita menos alimentação" : "Aguardando produção"}
+                icon={Sprout}
+                label="Lucro livre após alimentação"
+                negative={pricePerLiter > 0 && hasProduction && resultAfterNutritionPerLiter < 0}
+                value={pricePerLiter > 0 && hasProduction ? formatCurrency(resultAfterNutritionPerLiter) : "--"}
               />
               <IndicatorCard
                 helper={hasProduction ? "Preço por litro menos ração" : "Aguardando produção"}
-                icon={Sprout}
+                icon={FlaskConical}
                 label="Resultado livre após ração"
                 negative={pricePerLiter > 0 && hasProduction && resultAfterFeedPerLiter < 0}
                 value={pricePerLiter > 0 && hasProduction ? formatCurrency(resultAfterFeedPerLiter) : "--"}

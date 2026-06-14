@@ -35,6 +35,25 @@ describe("expense quantity fields", () => {
     expect(normalizeExpenseInput(parsed).unitPrice).toBe(5);
   });
 
+  it("accepts silage as an eligible quantity expense", () => {
+    const parsed = expenseSchema.parse({
+      category: "Silagem",
+      date: "2026-06-13",
+      description: "Compra de silagem",
+      quantity: 2,
+      referenceMonth: "2026-06",
+      unit: "tonelada",
+      unitPrice: 450,
+    });
+
+    expect(normalizeExpenseInput(parsed)).toMatchObject({
+      amount: 900,
+      quantity: 2,
+      unit: "tonelada",
+      unitPrice: 450,
+    });
+  });
+
   it("rejects quantity fields for categories that are not eligible", () => {
     const parsed = expenseSchema.safeParse({
       amount: 250,

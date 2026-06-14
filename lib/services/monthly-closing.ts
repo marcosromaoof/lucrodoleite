@@ -78,6 +78,8 @@ export async function calculateAndSaveMonthlyClosing(
     milkInvoiceAmount: input.milkInvoiceAmount,
     totalExpenses: expenseSummary.totalAmount,
     totalFeedAmount: expenseSummary.feedAmount,
+    totalMineralAmount: expenseSummary.mineralAmount,
+    totalSilageAmount: expenseSummary.silageAmount,
     totalLiters: productionSummary.totalLiters,
   });
   const saved = await upsertMonthlyClosing(db, {
@@ -91,6 +93,8 @@ export async function calculateAndSaveMonthlyClosing(
     totalExpenses: expenseSummary.totalAmount,
     totalFeedAmount: expenseSummary.feedAmount,
     totalLiters: productionSummary.totalLiters,
+    totalMineralAmount: expenseSummary.mineralAmount,
+    totalSilageAmount: expenseSummary.silageAmount,
   });
 
   return {
@@ -173,6 +177,8 @@ async function recalculateExistingMonthlyClosing(db: AppDatabase, closing: Month
     milkInvoiceAmount: closing.milkInvoiceAmount,
     totalExpenses: expenseSummary.totalAmount,
     totalFeedAmount: expenseSummary.feedAmount,
+    totalMineralAmount: expenseSummary.mineralAmount,
+    totalSilageAmount: expenseSummary.silageAmount,
     totalLiters: productionSummary.totalLiters,
   });
 
@@ -186,6 +192,8 @@ async function recalculateExistingMonthlyClosing(db: AppDatabase, closing: Month
     totalExpenses: expenseSummary.totalAmount,
     totalFeedAmount: expenseSummary.feedAmount,
     totalLiters: productionSummary.totalLiters,
+    totalMineralAmount: expenseSummary.mineralAmount,
+    totalSilageAmount: expenseSummary.silageAmount,
   });
 
   return result;
