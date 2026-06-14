@@ -177,7 +177,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
         <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
           <div className="rounded-lg border border-[var(--border)] bg-white p-5 shadow-sm">
             <h2 className="text-lg font-bold">Indicadores do mês</h2>
-            <div className="mt-4 grid divide-y divide-[var(--border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <div className="indicator-grid mt-4">
               <IndicatorCard
                 helper={hasProduction ? "Receita estimada menos despesas" : "Aguardando produção"}
                 icon={CircleDollarSign}

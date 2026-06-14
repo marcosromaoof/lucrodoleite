@@ -118,10 +118,27 @@ code {
 .indicator-value {
   margin-top: 0.75rem;
   white-space: nowrap;
-  font-size: clamp(1.4rem, 2vw, 1.9rem);
+  font-size: clamp(1.3rem, 1.7vw, 1.75rem);
   font-weight: 900;
   letter-spacing: 0;
   line-height: 1.12;
+}
+
+.indicator-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.indicator-card {
+  min-height: 154px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--milk-white);
+  padding: 1rem;
+  text-align: center;
 }
 
 .financial-negative {

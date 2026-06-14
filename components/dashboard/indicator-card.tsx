@@ -11,7 +11,7 @@ type IndicatorCardProps = {
 
 export function IndicatorCard({ icon: Icon, label, helper, negative = false, tone = "green", value }: IndicatorCardProps) {
   return (
-    <div className="grid min-h-48 place-items-center border-r border-[var(--border)] px-4 text-center last:border-r-0">
+    <div className="indicator-card">
       <div>
         <Icon
           aria-hidden="true"
