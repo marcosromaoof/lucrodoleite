@@ -179,6 +179,27 @@ export async function updateFarm(
   return updated;
 }
 
+export async function updateFarmClosingCycle(
+  db: AppDatabase,
+  farmId: string,
+  input: {
+    closingCycleEndDay: number;
+    closingCycleStartDay: number;
+  },
+): Promise<{ id: string } | undefined> {
+  const [updated] = await db
+    .update(farms)
+    .set({
+      closingCycleEndDay: input.closingCycleEndDay,
+      closingCycleStartDay: input.closingCycleStartDay,
+      updatedAt: new Date(),
+    })
+    .where(eq(farms.id, farmId))
+    .returning({ id: farms.id });
+
+  return updated;
+}
+
 export async function getFarmById(db: AppDatabase, farmId: string): Promise<FarmOption | null> {
   const [farm] = await db
     .select({

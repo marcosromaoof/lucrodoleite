@@ -16,9 +16,16 @@ describe("custom closing periods", () => {
     });
   });
 
-  it("clamps start and end dates to short months", () => {
+  it("treats equal start and end days as a cross-month dairy cycle", () => {
+    expect(getCycleDateRange("2026-06", 25, 25)).toEqual({
+      startDate: "2026-05-25",
+      endDate: "2026-06-25",
+    });
+  });
+
+  it("clamps equal start and end dates to short months across the cycle", () => {
     expect(getCycleDateRange("2026-02", 31, 31)).toEqual({
-      startDate: "2026-02-28",
+      startDate: "2026-01-31",
       endDate: "2026-02-28",
     });
   });

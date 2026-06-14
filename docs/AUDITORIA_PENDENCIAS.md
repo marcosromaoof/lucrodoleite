@@ -17,6 +17,8 @@ Data: 2026-06-14
 - Barra inferior mobile reorganizada com atalhos principais e menu `Mais`.
 - Tela de despesas com filtros por categoria, fornecedor, marca de racao e faixa de valor.
 - Producao diaria pode ser vinculada a teste de racao na web e na API v1.
+- Fechamento permite configurar a regra do ciclo do laticinio na propria tela.
+- Ciclo com mesmo dia de inicio e fechamento, como 25 a 25, passa a cruzar o mes corretamente.
 
 ## Pendencias funcionais para backlog
 

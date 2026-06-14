@@ -1,4 +1,5 @@
 import {
+  submitClosingCycleForm,
   submitDeleteMonthlyClosingForm,
   submitMonthlyClosingForm,
   submitRecalculateMonthlyClosingForm,
@@ -62,6 +63,8 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
   });
   const canClose = Boolean(context.activeFarm) && productionSummary.totalLiters > 0;
   const baseQuery = `farmId=${context.activeFarmId}&referenceMonth=${context.referenceMonth}`;
+  const defaultRangeLabel = formatDateRange(defaultRange.startDate, defaultRange.endDate);
+  const activeRangeLabel = formatDateRange(range.startDate, range.endDate);
 
   return (
     <AppShell
@@ -75,8 +78,70 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
     >
       <div className="grid gap-5 xl:grid-cols-[1fr_0.75fr]">
         <PageCard
-          description="Informe a competência e o período real da nota do laticínio. O cálculo usa produção e despesas dentro dessas datas."
-          title={`Fechar ${context.referenceMonthLabel}`}
+          description="Configure a regra que o laticínio usa para fechar a nota. Essa regra define o período padrão que o painel, relatórios e fechamento usam para somar produção e despesas."
+          title="Regra do ciclo do laticínio"
+        >
+          <form action={submitClosingCycleForm} className="grid gap-4">
+            <input name="farmId" type="hidden" value={context.activeFarmId} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField label="Dia que inicia o ciclo">
+                <input
+                  className="field"
+                  defaultValue={activeFarm?.closingCycleStartDay ?? 1}
+                  max="31"
+                  min="1"
+                  name="closingCycleStartDay"
+                  required
+                  step="1"
+                  type="number"
+                />
+              </FormField>
+              <FormField label="Dia que fecha a nota">
+                <input
+                  className="field"
+                  defaultValue={activeFarm?.closingCycleEndDay ?? 31}
+                  max="31"
+                  min="1"
+                  name="closingCycleEndDay"
+                  required
+                  step="1"
+                  type="number"
+                />
+              </FormField>
+            </div>
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--milk-white)] p-4 text-sm">
+              <span className="text-[color:var(--muted)]">Período padrão para {context.referenceMonthLabel}</span>
+              <strong className="mt-1 block text-base">{defaultRangeLabel}</strong>
+              <p className="mt-2 text-xs leading-5 text-[color:var(--muted)]">
+                Exemplo: se inicia dia 25 e fecha dia 25, o ciclo de {context.referenceMonthLabel} soma de{" "}
+                {defaultRangeLabel}. Se o laticínio fecha na véspera, use dia 24 como fechamento.
+              </p>
+            </div>
+            <button className="primary-button" disabled={!context.activeFarm} type="submit">
+              Salvar regra do ciclo
+            </button>
+          </form>
+        </PageCard>
+
+        <PageCard title={closing ? "Fechamento salvo" : "Prévia calculada"}>
+          <div className="grid gap-3">
+            <Indicator label="Preço real por litro" value={formatCurrency(preview.realPricePerLiter)} />
+            <Indicator label="Custo da ração por litro" value={formatCurrency(preview.feedCostPerLiter)} />
+            <Indicator label="Resultado livre após ração" value={formatCurrency(preview.resultAfterFeedPerLiter)} />
+            <Indicator label="Custo total por litro" value={formatCurrency(preview.totalCostPerLiter)} />
+            <Indicator label="Resultado líquido por litro" value={formatCurrency(preview.netResultPerLiter)} />
+            <Indicator label="Lucro líquido" value={formatCurrency(preview.netProfit)} emphasis />
+          </div>
+          {closing?.closedAt ? (
+            <p className="mt-4 text-xs text-[color:var(--muted)]">
+              Salvo em {closing.closedAt.toLocaleString("pt-BR")} para {formatDateRange(closing.periodStart, closing.periodEnd)}.
+            </p>
+          ) : null}
+        </PageCard>
+
+        <PageCard
+          description="Antes de salvar, confira ou ajuste manualmente as datas reais da nota. O cálculo abaixo usa exatamente esse intervalo."
+          title={`Fechar ciclo de ${context.referenceMonthLabel}`}
         >
           <form action={submitMonthlyClosingForm} className="grid gap-4">
             <input name="farmId" type="hidden" value={context.activeFarmId} />
@@ -100,10 +165,10 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
                   type="month"
                 />
               </FormField>
-              <FormField label="Data inicial">
+              <FormField label="Data inicial do ciclo">
                 <input className="field" defaultValue={range.startDate} name="periodStart" required type="date" />
               </FormField>
-              <FormField label="Data final">
+              <FormField label="Data final do ciclo">
                 <input className="field" defaultValue={range.endDate} name="periodEnd" required type="date" />
               </FormField>
             </div>
@@ -123,7 +188,7 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
             <div className="grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--milk-white)] p-4 text-sm md:grid-cols-3">
               <div>
                 <span className="text-[color:var(--muted)]">Período apurado</span>
-                <strong className="block text-base">{formatDateRange(range.startDate, range.endDate)}</strong>
+                <strong className="block text-base">{activeRangeLabel}</strong>
               </div>
               <div>
                 <span className="text-[color:var(--muted)]">Litros apurados</span>
@@ -136,7 +201,7 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
             </div>
 
             <button className="primary-button" disabled={!canClose} type="submit">
-              Calcular e salvar fechamento
+              Salvar fechamento deste período
             </button>
           </form>
 
@@ -147,86 +212,69 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
           ) : productionSummary.totalLiters <= 0 ? (
             <div className="mt-4">
               <SetupCallout title="Produção ainda não registrada">
-                Registre litros produzidos entre {formatDateRange(range.startDate, range.endDate)} antes de fechar.
+                Registre litros produzidos entre {activeRangeLabel} antes de fechar.
               </SetupCallout>
             </div>
           ) : null}
         </PageCard>
 
-        <PageCard title={closing ? "Fechamento salvo" : "Prévia calculada"}>
-          <div className="grid gap-3">
-            <Indicator label="Preço real por litro" value={formatCurrency(preview.realPricePerLiter)} />
-            <Indicator label="Custo da ração por litro" value={formatCurrency(preview.feedCostPerLiter)} />
-            <Indicator label="Resultado livre após ração" value={formatCurrency(preview.resultAfterFeedPerLiter)} />
-            <Indicator label="Custo total por litro" value={formatCurrency(preview.totalCostPerLiter)} />
-            <Indicator label="Resultado líquido por litro" value={formatCurrency(preview.netResultPerLiter)} />
-            <Indicator label="Lucro líquido" value={formatCurrency(preview.netProfit)} emphasis />
-          </div>
-          {closing?.closedAt ? (
-            <p className="mt-4 text-xs text-[color:var(--muted)]">
-              Salvo em {closing.closedAt.toLocaleString("pt-BR")} para {formatDateRange(closing.periodStart, closing.periodEnd)}.
-            </p>
-          ) : null}
-        </PageCard>
-
-        <PageCard title="Histórico de fechamentos">
-          {closingHistory.length === 0 ? (
-            <SetupCallout>Nenhum fechamento salvo para esta fazenda.</SetupCallout>
-          ) : (
-            <div className="overflow-hidden rounded-lg border border-[var(--border)]">
-              <table className="w-full border-collapse text-sm">
-                <thead className="bg-[var(--milk-white)]">
-                  <tr>
-                    <th className="border-b border-[var(--border)] px-3 py-2 text-left">Competência</th>
-                    <th className="border-b border-[var(--border)] px-3 py-2 text-left">Período</th>
-                    <th className="border-b border-[var(--border)] px-3 py-2 text-right">Lucro</th>
-                    <th className="border-b border-[var(--border)] px-3 py-2 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {closingHistory.map((item) => (
-                    <tr key={item.id}>
-                      <td className="border-t border-[var(--border)] px-3 py-2">
-                        {formatReferenceMonth(item.referenceMonth)}
-                      </td>
-                      <td className="border-t border-[var(--border)] px-3 py-2">
-                        <span className="block">{formatDateRange(item.periodStart, item.periodEnd)}</span>
-                        <span className="text-xs text-[color:var(--muted)]">{formatLiters(item.totalLiters)}</span>
-                      </td>
-                      <td className="border-t border-[var(--border)] px-3 py-2 text-right font-bold">
-                        {formatCurrency(item.netProfit)}
-                      </td>
-                      <td className="border-t border-[var(--border)] px-3 py-2">
-                        <div className="row-actions">
-                          <form action={submitRecalculateMonthlyClosingForm}>
-                            <input name="farmId" type="hidden" value={context.activeFarmId} />
-                            <input name="closingId" type="hidden" value={item.id} />
-                            <button
-                              className="action-link"
-                              type="submit"
-                            >
-                              Recalcular
-                            </button>
-                          </form>
-                          <form action={submitDeleteMonthlyClosingForm}>
-                            <input name="farmId" type="hidden" value={context.activeFarmId} />
-                            <input name="closingId" type="hidden" value={item.id} />
-                            <ConfirmSubmitButton
-                              className="danger-action"
-                              message="Excluir este fechamento?"
-                            >
-                              Excluir
-                            </ConfirmSubmitButton>
-                          </form>
-                        </div>
-                      </td>
+        <div className="xl:col-span-2">
+          <PageCard title="Histórico de fechamentos">
+            {closingHistory.length === 0 ? (
+              <SetupCallout>Nenhum fechamento salvo para esta fazenda.</SetupCallout>
+            ) : (
+              <div className="overflow-hidden rounded-lg border border-[var(--border)]">
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-[var(--milk-white)]">
+                    <tr>
+                      <th className="border-b border-[var(--border)] px-3 py-2 text-left">Competência</th>
+                      <th className="border-b border-[var(--border)] px-3 py-2 text-left">Período</th>
+                      <th className="border-b border-[var(--border)] px-3 py-2 text-right">Lucro</th>
+                      <th className="border-b border-[var(--border)] px-3 py-2 text-right">Ações</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </PageCard>
+                  </thead>
+                  <tbody>
+                    {closingHistory.map((item) => (
+                      <tr key={item.id}>
+                        <td className="border-t border-[var(--border)] px-3 py-2">
+                          {formatReferenceMonth(item.referenceMonth)}
+                        </td>
+                        <td className="border-t border-[var(--border)] px-3 py-2">
+                          <span className="block">{formatDateRange(item.periodStart, item.periodEnd)}</span>
+                          <span className="text-xs text-[color:var(--muted)]">{formatLiters(item.totalLiters)}</span>
+                        </td>
+                        <td className="border-t border-[var(--border)] px-3 py-2 text-right font-bold">
+                          {formatCurrency(item.netProfit)}
+                        </td>
+                        <td className="border-t border-[var(--border)] px-3 py-2">
+                          <div className="row-actions">
+                            <form action={submitRecalculateMonthlyClosingForm}>
+                              <input name="farmId" type="hidden" value={context.activeFarmId} />
+                              <input name="closingId" type="hidden" value={item.id} />
+                              <button className="action-link" type="submit">
+                                Recalcular
+                              </button>
+                            </form>
+                            <form action={submitDeleteMonthlyClosingForm}>
+                              <input name="farmId" type="hidden" value={context.activeFarmId} />
+                              <input name="closingId" type="hidden" value={item.id} />
+                              <ConfirmSubmitButton
+                                className="danger-action"
+                                message="Excluir este fechamento?"
+                              >
+                                Excluir
+                              </ConfirmSubmitButton>
+                            </form>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </PageCard>
+        </div>
       </div>
     </AppShell>
   );

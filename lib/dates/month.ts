@@ -35,7 +35,7 @@ export function getCycleDateRange(
   const [referenceYear, referenceMonthNumber] = referenceMonth.split("-").map(Number);
   const startDay = normalizeCycleDay(cycleStartDay);
   const endDay = normalizeCycleDay(cycleEndDay);
-  const startsInPreviousMonth = startDay > endDay;
+  const startsInPreviousMonth = startDay >= endDay;
   const startMonthIndex = startsInPreviousMonth ? referenceMonthNumber - 2 : referenceMonthNumber - 1;
   const endMonthIndex = referenceMonthNumber - 1;
   const startDate = new Date(referenceYear, startMonthIndex, 1);
