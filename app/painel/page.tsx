@@ -180,7 +180,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
         {!hasFarm ? (
           <SetupCallout title="Recuperar dados antigos">
             <p>
-              Se voce ja tinha producao, despesas ou fazenda cadastrada antes do login no dominio novo, vincule esses
+              Se voce ja tinha fazendas, producao, despesas ou fechamentos antes do login no dominio novo, vincule esses
               registros a sua conta atual.
             </p>
             <form
@@ -194,7 +194,8 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
               </SubmitButton>
             </form>
             <p className="mt-3">
-              Se nao houver dados legados no banco, cadastre a primeira fazenda para liberar os indicadores.
+              Depois da recuperacao, confira o seletor de fazenda e o mes no topo. Parte dos registros pode estar em
+              outra fazenda ou em outro periodo.
             </p>
           </SetupCallout>
         ) : null}

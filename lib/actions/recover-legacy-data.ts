@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db/client";
 import { requireAuthenticatedUser, requireDatabaseConfigured } from "@/lib/actions/guards";
-import { claimLegacyOrphanFarmsForUser, claimRecoverableLegacyFarmsForEmptyUser } from "@/lib/repositories/farms";
+import { claimAllExistingFarmsForUser, claimLegacyOrphanFarmsForUser } from "@/lib/repositories/farms";
+import { canClaimAllLegacyFarmsForUser } from "@/lib/repositories/user-access";
 
 export async function recoverLegacyFarmDataAction(): Promise<void> {
   const databaseGuard = requireDatabaseConfigured();
@@ -21,6 +22,14 @@ export async function recoverLegacyFarmDataAction(): Promise<void> {
   const db = getDb();
 
   await claimLegacyOrphanFarmsForUser(db, authGuard.user.id);
-  await claimRecoverableLegacyFarmsForEmptyUser(db, authGuard.user.id);
+
+  const completeRecovery = await canClaimAllLegacyFarmsForUser(db, {
+    email: authGuard.user.email,
+  });
+
+  if (completeRecovery.allowed) {
+    await claimAllExistingFarmsForUser(db, authGuard.user.id);
+  }
+
   revalidatePath("/", "layout");
 }

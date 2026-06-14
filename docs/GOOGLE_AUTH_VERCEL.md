@@ -81,7 +81,31 @@ vercel env add GOOGLE_ANDROID_CLIENT_ID production --value "SEU_CLIENT_ID_ANDROI
 
 Nunca coloque `AUTH_GOOGLE_SECRET`, `AUTH_SECRET` ou tokens reais em arquivos versionados.
 
-## 3. Fazer novo deploy
+## 3. Recuperar dados antigos depois de trocar dominio
+
+Quando o usuario entra com o mesmo e-mail em um dominio novo, o app tenta sincronizar automaticamente fazendas vinculadas a contas Auth.js antigas com o mesmo e-mail.
+
+Na tela **Configuracoes**, o botao **Recuperar dados antigos** executa tambem uma recuperacao manual:
+
+- vincula fazendas antigas sem usuario;
+- vincula todas as fazendas existentes quando o banco tem apenas um grupo de e-mail de usuario;
+- bloqueia a recuperacao completa quando existem varios e-mails diferentes no banco, para evitar que uma conta errada acesse dados de outra pessoa.
+
+Se o banco ja tiver mais de um e-mail e for necessario liberar a recuperacao completa para o produtor correto, adicione o e-mail dele na Vercel:
+
+```powershell
+vercel env add LEGACY_RECOVERY_EMAILS production --value "email-do-produtor@example.com" --force --yes --scope marcos-projects-462af1c5
+```
+
+Para mais de um e-mail autorizado, use virgulas:
+
+```powershell
+vercel env add LEGACY_RECOVERY_EMAILS production --value "produtor1@example.com,produtor2@example.com" --force --yes --scope marcos-projects-462af1c5
+```
+
+Depois faca novo deploy. O usuario autorizado deve entrar, abrir **Configuracoes**, clicar em **Recuperar dados antigos** e conferir o seletor de fazenda e o mes no topo, porque parte dos registros pode estar em outra fazenda ou periodo.
+
+## 4. Fazer novo deploy
 
 Alteracoes em variaveis da Vercel entram no runtime apenas depois de um novo deploy.
 
@@ -95,7 +119,7 @@ git push origin main
 
 A Vercel deve criar um novo deployment de producao automaticamente.
 
-## 4. Validar em producao
+## 5. Validar em producao
 
 Depois que o deploy ficar `Ready`, valide:
 
@@ -121,7 +145,7 @@ Teste manual obrigatorio:
 4. Conclua o login.
 5. Confirme que o app volta para o painel.
 
-## 5. Checklist para nova troca de dominio
+## 6. Checklist para nova troca de dominio
 
 Substitua `https://lucrodoleite.com.br` pelo novo dominio em todos os pontos:
 

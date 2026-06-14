@@ -164,6 +164,36 @@ export async function claimLegacyOrphanFarmsForUser(db: AppDatabase, userId: str
   return { claimed: inserted.length };
 }
 
+export async function claimAllExistingFarmsForUser(db: AppDatabase, userId: string) {
+  const candidates = await db
+    .select({
+      id: farms.id,
+    })
+    .from(farms)
+    .where(sql`not exists (select 1 from ${farmMembers} where ${farmMembers.farmId} = ${farms.id} and ${farmMembers.userId} = ${userId})`)
+    .orderBy(asc(farms.createdAt));
+
+  if (candidates.length === 0) {
+    return { claimed: 0 };
+  }
+
+  const inserted = await db
+    .insert(farmMembers)
+    .values(
+      candidates.map((farm) => ({
+        farmId: farm.id,
+        role: "owner",
+        userId,
+      })),
+    )
+    .onConflictDoNothing({
+      target: [farmMembers.farmId, farmMembers.userId],
+    })
+    .returning({ id: farmMembers.id });
+
+  return { claimed: inserted.length };
+}
+
 export async function claimRecoverableLegacyFarmsForEmptyUser(db: AppDatabase, userId: string) {
   const currentFarms = await listFarmsForUser(db, userId);
 

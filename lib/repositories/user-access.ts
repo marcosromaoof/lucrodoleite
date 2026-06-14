@@ -95,3 +95,44 @@ export async function syncFarmMembershipsForEmail(
 
   return { linked: inserted.length };
 }
+
+export async function canClaimAllLegacyFarmsForUser(
+  db: AppDatabase,
+  input: {
+    email: string | null | undefined;
+  },
+) {
+  const normalizedEmail = normalizeUserEmail(input.email);
+
+  if (!normalizedEmail) {
+    return { allowed: false, reason: "missing_email" };
+  }
+
+  const allowedEmails = (process.env.LEGACY_RECOVERY_EMAILS ?? "")
+    .split(",")
+    .map((email) => normalizeUserEmail(email))
+    .filter(Boolean);
+
+  if (allowedEmails.includes(normalizedEmail)) {
+    return { allowed: true, reason: "allowlisted_email" };
+  }
+
+  if (process.env.LEGACY_RECOVERY_ALLOW_ALL === "true") {
+    return { allowed: true, reason: "env_override" };
+  }
+
+  const existingEmailGroups = await db
+    .selectDistinct({
+      email: sql<string>`lower(${users.email})`,
+    })
+    .from(users)
+    .where(sql`${users.email} is not null`);
+
+  const normalizedExistingEmails = existingEmailGroups.map((row) => normalizeUserEmail(row.email)).filter(Boolean);
+
+  if (normalizedExistingEmails.length === 1 && normalizedExistingEmails[0] === normalizedEmail) {
+    return { allowed: true, reason: "single_email_group" };
+  }
+
+  return { allowed: false, reason: "multiple_email_groups" };
+}

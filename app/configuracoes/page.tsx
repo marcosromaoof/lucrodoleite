@@ -174,6 +174,10 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
                     ? `Existem ${legacyFarms.length} fazenda(s) antigas sem usuario vinculado.`
                     : "Se seus dados sumiram apos o login no dominio novo, use esta recuperacao para vincular registros legados a sua conta atual."}
                 </p>
+                <p className="mt-2 text-sm text-[color:var(--muted)]">
+                  Depois de recuperar, confira o seletor de fazenda e o mes no topo. Dados antigos podem estar em outro
+                  periodo ou em outra fazenda.
+                </p>
                 <form
                   action={recoverLegacyFarmDataAction}
                   className="mt-3"
@@ -233,6 +237,26 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
                   </p>
                 </div>
               ))}
+              <SetupCallout title="Recuperar dados antigos">
+                <p>
+                  Se a recuperacao trouxe apenas parte dos dados, rode novamente para tentar vincular fazendas antigas
+                  que ficaram fora da conta atual.
+                </p>
+                <p className="mt-2 text-sm text-[color:var(--muted)]">
+                  A recuperacao nao apaga nem move registros. Depois, use o seletor de fazenda e o mes no topo para
+                  localizar producao, despesas, fechamentos e relatorios de outros periodos.
+                </p>
+                <form
+                  action={recoverLegacyFarmDataAction}
+                  className="mt-3"
+                  data-feedback-pending="Recuperando dados antigos..."
+                  data-feedback-success="Dados recuperados. Confira a lista de fazendas e o periodo selecionado."
+                >
+                  <SubmitButton className="primary-button w-full" pendingLabel="Recuperando...">
+                    Recuperar dados antigos
+                  </SubmitButton>
+                </form>
+              </SetupCallout>
             </div>
           )}
         </PageCard>
