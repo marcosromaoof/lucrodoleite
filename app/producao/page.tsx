@@ -11,6 +11,7 @@ import { getOperationalContext } from "@/lib/app/operational-context";
 import { getSearchParam, type PageSearchParams } from "@/lib/app/search-params";
 import { getCycleDateRange, getTodayDateKey, formatDateRange } from "@/lib/dates/month";
 import { formatLiters } from "@/lib/formatters/number";
+import { listFeedTestResults } from "@/lib/repositories/feed-tests";
 import { listProductionsByMonth } from "@/lib/repositories/production";
 
 export const dynamic = "force-dynamic";
@@ -29,10 +30,14 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
       )
     : { startDate: `${context.referenceMonth}-01`, endDate: `${context.referenceMonth}-31` };
   const editProductionId = await getSearchParam(searchParams, "editProductionId");
-  const productions = context.activeFarm
-    ? await listProductionsByMonth(getDb(), context.activeFarm.id, range.startDate, range.endDate)
-    : [];
+  const [productions, feedTests] = context.activeFarm
+    ? await Promise.all([
+        listProductionsByMonth(getDb(), context.activeFarm.id, range.startDate, range.endDate),
+        listFeedTestResults(getDb(), context.activeFarm.id, 100),
+      ])
+    : [[], []];
   const editingProduction = productions.find((production) => production.id === editProductionId) ?? null;
+  const feedTestLabels = new Map(feedTests.map((test) => [test.id, `${test.testName} - ${test.label}`]));
   const baseQuery = `farmId=${context.activeFarmId}&referenceMonth=${context.referenceMonth}`;
 
   return (
@@ -105,6 +110,17 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
               </FormField>
             </div>
 
+            <FormField label="Teste de ração vinculado">
+              <select className="field" defaultValue={editingProduction?.feedTestId ?? ""} name="feedTestId">
+                <option value="">Sem vínculo</option>
+                {feedTests.map((test) => (
+                  <option key={test.id} value={test.id}>
+                    {test.testName} - {test.label}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+
             <FormField label="Observação">
               <textarea
                 className="field min-h-32 resize-y"
@@ -145,6 +161,7 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
                 <thead className="bg-[var(--milk-white)]">
                   <tr>
                     <th className="border-b border-[var(--border)] px-3 py-2 text-left">Data</th>
+                    <th className="border-b border-[var(--border)] px-3 py-2 text-left">Teste</th>
                     <th className="border-b border-[var(--border)] px-3 py-2 text-right">Litros</th>
                     <th className="border-b border-[var(--border)] px-3 py-2 text-right">Ações</th>
                   </tr>
@@ -153,6 +170,9 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
                   {productions.map((production) => (
                     <tr key={production.id}>
                       <td className="border-t border-[var(--border)] px-3 py-2">{production.date}</td>
+                      <td className="border-t border-[var(--border)] px-3 py-2 text-xs text-[color:var(--muted)]">
+                        {production.feedTestId ? feedTestLabels.get(production.feedTestId) ?? "Teste vinculado" : "--"}
+                      </td>
                       <td className="border-t border-[var(--border)] px-3 py-2 text-right font-bold">
                         {formatLiters(production.liters)}
                       </td>

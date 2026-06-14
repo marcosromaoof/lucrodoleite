@@ -29,6 +29,7 @@ export async function createProductionAction(formData: FormData): Promise<Action
       liters: readNumber(formData, "liters"),
       lactatingCows: readInteger(formData, "lactatingCows"),
       batchName: readString(formData, "batchName"),
+      feedTestId: readString(formData, "feedTestId"),
       notes: readString(formData, "notes"),
     });
 
@@ -83,6 +84,7 @@ export async function updateProductionAction(formData: FormData): Promise<Action
       liters: readNumber(formData, "liters"),
       lactatingCows: readInteger(formData, "lactatingCows"),
       batchName: readString(formData, "batchName"),
+      feedTestId: readString(formData, "feedTestId"),
       notes: readString(formData, "notes"),
     });
 

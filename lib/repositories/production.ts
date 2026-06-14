@@ -18,6 +18,7 @@ export async function createDailyProduction(db: AppDatabase, input: CreateProduc
       liters: input.liters.toString(),
       lactatingCows: input.lactatingCows,
       batchName: input.batchName,
+      feedTestId: input.feedTestId ?? null,
       notes: input.notes,
       createdBy: input.createdBy,
     })
@@ -27,6 +28,7 @@ export async function createDailyProduction(db: AppDatabase, input: CreateProduc
         liters: input.liters.toString(),
         lactatingCows: input.lactatingCows,
         batchName: input.batchName,
+        feedTestId: input.feedTestId ?? null,
         notes: input.notes,
         updatedAt: new Date(),
       },
@@ -178,6 +180,7 @@ export async function updateProduction(
     .set({
       batchName: input.batchName,
       date: input.date,
+      feedTestId: input.feedTestId ?? null,
       lactatingCows: input.lactatingCows,
       liters: input.liters.toString(),
       notes: input.notes,
