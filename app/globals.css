@@ -70,13 +70,78 @@ a {
   background: var(--farm-green);
   color: white;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
   font-weight: 800;
   padding: 0.85rem 1rem;
+  text-align: center;
+  transition: filter 160ms ease, transform 160ms ease, opacity 160ms ease;
 }
 
 .primary-button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
+}
+
+.primary-button:not(:disabled):active,
+.topbar-apply:not(:disabled):active,
+.action-link:not(:disabled):active,
+.danger-action:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.button-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+  animation: spin 700ms linear infinite;
+}
+
+.action-feedback-toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 70;
+  display: inline-flex;
+  max-width: min(92vw, 380px);
+  min-height: 48px;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid rgba(13, 77, 45, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.98);
+  box-shadow: 0 18px 46px rgba(19, 35, 24, 0.18);
+  color: var(--farm-green-dark);
+  font-size: 0.9rem;
+  font-weight: 900;
+  padding: 0.75rem 0.95rem;
+}
+
+.action-feedback-loading {
+  border-color: rgba(13, 77, 45, 0.28);
+}
+
+.action-feedback-success {
+  border-color: rgba(19, 122, 63, 0.36);
+  background: rgba(238, 243, 223, 0.98);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-spinner {
+    animation-duration: 1.8s;
+  }
 }
 
 .app-root {
@@ -267,6 +332,15 @@ a {
   font-size: 0.88rem;
   font-weight: 900;
   padding: 0 0.95rem;
+  transition: filter 160ms ease, transform 160ms ease, opacity 160ms ease;
+}
+
+.topbar-apply:disabled,
+.action-link:disabled,
+.danger-action:disabled,
+button.topbar-icon-button:disabled {
+  cursor: wait;
+  opacity: 0.62;
 }
 
 .topbar-tools {
@@ -423,6 +497,7 @@ button.topbar-icon-button {
   font-size: 0.78rem;
   font-weight: 900;
   padding: 0 0.62rem;
+  transition: filter 160ms ease, transform 160ms ease, opacity 160ms ease;
 }
 
 .danger-action {

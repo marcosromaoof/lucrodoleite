@@ -5,6 +5,7 @@ import { getDatabaseStatusLabel, isDatabaseConfigured } from "@/lib/app/environm
 import { navigationItems } from "@/lib/app/navigation";
 import { getOptionalSession } from "@/lib/auth/session";
 import type { FarmOption } from "@/lib/repositories/farms";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 type AppShellProps = {
   activeHref: string;
@@ -87,7 +88,12 @@ export async function AppShell({
         <section className="app-main">
           <header className="topbar">
             <div className="topbar-content">
-              <form className="context-form" method="get">
+              <form
+                className="context-form"
+                data-feedback-pending="Aplicando filtros..."
+                data-feedback-success="Filtros aplicados. Confira o período atualizado."
+                method="get"
+              >
                 <label className="sr-only" htmlFor="farmId">
                   Fazenda
                 </label>
@@ -120,13 +126,13 @@ export async function AppShell({
                   />
                 </label>
 
-                <button
+                <SubmitButton
                   className="topbar-apply"
-                  type="submit"
+                  pendingLabel="Aplicando..."
                 >
                   <RefreshCcw aria-hidden="true" size={18} />
                   Aplicar
-                </button>
+                </SubmitButton>
               </form>
 
               <div className="topbar-tools">
@@ -151,7 +157,11 @@ export async function AppShell({
                 <span className="topbar-avatar" title={session?.user?.email ?? session?.user?.name ?? "Usuário"}>
                   {userInitials}
                 </span>
-                <form action={signOutAction}>
+                <form
+                  action={signOutAction}
+                  data-feedback-pending="Saindo da conta..."
+                  data-feedback-success="Sessão encerrada."
+                >
                   <button
                     aria-label="Sair"
                     className="topbar-icon-button"

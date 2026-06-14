@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, BarChart3, FileDown, Milk, Scale, Wallet } from "lucide-react";
 import type { ComponentType } from "react";
 import { signInWithGoogleAction } from "@/app/entrar/actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getOptionalSession } from "@/lib/auth/session";
 
 export default async function Home() {
@@ -35,12 +36,19 @@ export default async function Home() {
                 </Link>
               ) : (
                 <>
-                  <form action={signInWithGoogleAction}>
+                  <form
+                    action={signInWithGoogleAction}
+                    data-feedback-pending="Abrindo login do Google..."
+                    data-feedback-success="Login processado."
+                  >
                     <input name="callbackUrl" type="hidden" value="/painel" />
-                    <button className="primary-button inline-flex w-full items-center justify-center gap-2 px-6" type="submit">
+                    <SubmitButton
+                      className="primary-button inline-flex w-full items-center justify-center gap-2 px-6"
+                      pendingLabel="Abrindo Google..."
+                    >
                       Criar conta com Google
                       <ArrowRight aria-hidden="true" size={20} />
-                    </button>
+                    </SubmitButton>
                   </form>
                   <Link
                     className="inline-flex min-h-[52px] items-center justify-center rounded-lg border border-[var(--farm-green)] bg-white/86 px-6 font-black text-[color:var(--farm-green)] shadow-sm"

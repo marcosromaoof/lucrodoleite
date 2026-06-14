@@ -6,6 +6,7 @@ import { EditModeBanner } from "@/components/ui/edit-mode-banner";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getOperationalContext } from "@/lib/app/operational-context";
 import { getSearchParam, type PageSearchParams } from "@/lib/app/search-params";
 import { formatCurrency } from "@/lib/formatters/number";
@@ -37,7 +38,12 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
           description="Cadastre a fazenda, preço padrão do leite e ciclo de fechamento do laticínio. Exemplo 25 a 24 para notas que fecham fora do mês civil."
           title={editingFarm ? "Editar fazenda" : "Dados da fazenda"}
         >
-          <form action={submitFarmForm} className="grid gap-4">
+          <form
+            action={submitFarmForm}
+            className="grid gap-4"
+            data-feedback-pending={editingFarm ? "Atualizando fazenda..." : "Salvando fazenda..."}
+            data-feedback-success="Fazenda processada. Confira os dados atualizados."
+          >
             {editingFarm ? <input name="farmId" type="hidden" value={editingFarm.id} /> : null}
             {editingFarm ? (
               <EditModeBanner
@@ -136,9 +142,12 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
             </FormField>
 
             <div className="flex flex-wrap gap-3">
-              <button className="primary-button flex-1" type="submit">
+              <SubmitButton
+                className="primary-button flex-1"
+                pendingLabel={editingFarm ? "Atualizando..." : "Salvando..."}
+              >
                 {editingFarm ? "Atualizar fazenda" : "Salvar fazenda"}
-              </button>
+              </SubmitButton>
               {editingFarm ? (
                 <Link
                   className="edit-cancel-link inline-flex min-h-12 items-center justify-center"
@@ -174,7 +183,11 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
                       >
                         Editar
                       </Link>
-                      <form action={submitDeleteFarmForm}>
+                      <form
+                        action={submitDeleteFarmForm}
+                        data-feedback-pending="Excluindo fazenda..."
+                        data-feedback-success="Fazenda processada. Confira a lista atualizada."
+                      >
                         <input name="farmId" type="hidden" value={farm.id} />
                         <ConfirmSubmitButton
                           className="danger-action"

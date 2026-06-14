@@ -6,6 +6,7 @@ import { EditModeBanner } from "@/components/ui/edit-mode-banner";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getDb } from "@/db/client";
 import { getOperationalContext } from "@/lib/app/operational-context";
 import { getSearchParam, type PageSearchParams } from "@/lib/app/search-params";
@@ -55,7 +56,12 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
           description={`Período do ciclo: ${formatDateRange(range.startDate, range.endDate)}. Se a data já existir, use editar na lista para alterar com controle de fechamento.`}
           title={editingProduction ? "Editar produção" : "Lançamento do dia"}
         >
-          <form action={submitProductionForm} className="grid gap-4">
+          <form
+            action={submitProductionForm}
+            className="grid gap-4"
+            data-feedback-pending={editingProduction ? "Atualizando produção..." : "Salvando produção..."}
+            data-feedback-success="Produção processada. Confira o histórico atualizado."
+          >
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             {editingProduction ? <input name="productionId" type="hidden" value={editingProduction.id} /> : null}
             {editingProduction ? (
@@ -131,9 +137,13 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
             </FormField>
 
             <div className="flex flex-wrap gap-3">
-              <button className="primary-button flex-1" disabled={!context.activeFarm} type="submit">
+              <SubmitButton
+                className="primary-button flex-1"
+                disabled={!context.activeFarm}
+                pendingLabel={editingProduction ? "Atualizando..." : "Salvando..."}
+              >
                 {editingProduction ? "Atualizar produção" : "Salvar produção"}
-              </button>
+              </SubmitButton>
               {editingProduction ? (
                 <Link
                   className="edit-cancel-link inline-flex min-h-12 items-center justify-center"
@@ -184,7 +194,11 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
                           >
                             Editar
                           </Link>
-                          <form action={submitDeleteProductionForm}>
+                          <form
+                            action={submitDeleteProductionForm}
+                            data-feedback-pending="Excluindo produção..."
+                            data-feedback-success="Produção processada. Confira o histórico atualizado."
+                          >
                             <input name="farmId" type="hidden" value={context.activeFarmId} />
                             <input name="productionId" type="hidden" value={production.id} />
                             <ConfirmSubmitButton

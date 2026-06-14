@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, Milk } from "lucide-react";
 import { signInWithGoogleAction } from "@/app/entrar/actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 import type { PageSearchParams } from "@/lib/app/search-params";
 import { getSearchParam } from "@/lib/app/search-params";
 import { getOptionalSession } from "@/lib/auth/session";
@@ -37,12 +38,20 @@ export default async function EntrarPage({ searchParams }: EntrarPageProps) {
           </div>
         </div>
 
-        <form action={signInWithGoogleAction} className="mt-8">
+        <form
+          action={signInWithGoogleAction}
+          className="mt-8"
+          data-feedback-pending="Abrindo login do Google..."
+          data-feedback-success="Login processado."
+        >
           <input name="callbackUrl" type="hidden" value={callbackUrl} />
-          <button className="primary-button inline-flex w-full items-center justify-center gap-2" type="submit">
+          <SubmitButton
+            className="primary-button inline-flex w-full items-center justify-center gap-2"
+            pendingLabel="Abrindo Google..."
+          >
             Entrar com Google
             <ArrowRight aria-hidden="true" size={20} />
-          </button>
+          </SubmitButton>
         </form>
 
         <p className="mt-5 text-sm leading-6 text-[color:var(--muted)]">

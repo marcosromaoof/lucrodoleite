@@ -2,31 +2,21 @@
 
 import { useFormStatus } from "react-dom";
 
-type ConfirmSubmitButtonProps = {
+type SubmitButtonProps = {
   children: React.ReactNode;
   className?: string;
-  message: string;
+  disabled?: boolean;
   pendingLabel?: string;
 };
 
-export function ConfirmSubmitButton({
-  children,
-  className,
-  message,
-  pendingLabel = "Excluindo...",
-}: ConfirmSubmitButtonProps) {
+export function SubmitButton({ children, className, disabled = false, pendingLabel = "Processando..." }: SubmitButtonProps) {
   const { pending } = useFormStatus();
 
   return (
     <button
       aria-busy={pending}
       className={className}
-      disabled={pending}
-      onClick={(event) => {
-        if (!window.confirm(message)) {
-          event.preventDefault();
-        }
-      }}
+      disabled={disabled || pending}
       type="submit"
     >
       {pending ? (

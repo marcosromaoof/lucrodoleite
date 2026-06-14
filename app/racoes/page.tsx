@@ -11,6 +11,7 @@ import { EditModeBanner } from "@/components/ui/edit-mode-banner";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getDb } from "@/db/client";
 import { getOperationalContext } from "@/lib/app/operational-context";
 import { getSearchParam, type PageSearchParams } from "@/lib/app/search-params";
@@ -61,7 +62,12 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
           description="Cadastre marcas e compare custo, aumento de litros e lucro adicional por período."
           title={editingBrand ? "Editar marca de ração" : "Nova marca de ração"}
         >
-          <form action={submitFeedBrandForm} className="grid gap-4">
+          <form
+            action={submitFeedBrandForm}
+            className="grid gap-4"
+            data-feedback-pending={editingBrand ? "Atualizando marca..." : "Salvando marca..."}
+            data-feedback-success="Marca processada. Confira a lista atualizada."
+          >
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             {editingBrand ? <input name="feedBrandId" type="hidden" value={editingBrand.id} /> : null}
             {editingBrand ? (
@@ -139,9 +145,13 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
             </FormField>
 
             <div className="flex flex-wrap gap-3">
-              <button className="primary-button flex-1" disabled={!context.activeFarm} type="submit">
+              <SubmitButton
+                className="primary-button flex-1"
+                disabled={!context.activeFarm}
+                pendingLabel={editingBrand ? "Atualizando..." : "Salvando..."}
+              >
                 {editingBrand ? "Atualizar marca" : "Salvar marca"}
-              </button>
+              </SubmitButton>
               {editingBrand ? (
                 <Link
                   className="edit-cancel-link inline-flex min-h-12 items-center justify-center"
@@ -158,7 +168,12 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
           description="Informe a média antes da troca, a média durante o teste e o custo da ração no período."
           title={editingTest ? "Editar teste de ração" : "Novo teste de ração"}
         >
-          <form action={submitFeedTestForm} className="grid gap-4">
+          <form
+            action={submitFeedTestForm}
+            className="grid gap-4"
+            data-feedback-pending={editingTest ? "Atualizando teste..." : "Calculando teste..."}
+            data-feedback-success="Teste processado. Confira os resultados atualizados."
+          >
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             {editingTest ? <input name="feedTestId" type="hidden" value={editingTest.id} /> : null}
             {editingTest ? (
@@ -295,9 +310,13 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
             </FormField>
 
             <div className="flex flex-wrap gap-3">
-              <button className="primary-button flex-1" disabled={!context.activeFarm} type="submit">
+              <SubmitButton
+                className="primary-button flex-1"
+                disabled={!context.activeFarm}
+                pendingLabel={editingTest ? "Atualizando..." : "Calculando..."}
+              >
                 {editingTest ? "Atualizar teste" : "Calcular e salvar teste"}
-              </button>
+              </SubmitButton>
               {editingTest ? (
                 <Link
                   className="edit-cancel-link inline-flex min-h-12 items-center justify-center"
@@ -337,7 +356,11 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
                       >
                         Editar
                       </Link>
-                      <form action={submitDeleteFeedBrandForm}>
+                      <form
+                        action={submitDeleteFeedBrandForm}
+                        data-feedback-pending="Excluindo marca..."
+                        data-feedback-success="Marca processada. Confira a lista atualizada."
+                      >
                         <input name="farmId" type="hidden" value={context.activeFarmId} />
                         <input name="feedBrandId" type="hidden" value={brand.id} />
                         <ConfirmSubmitButton
@@ -397,7 +420,11 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
                       >
                         Editar
                       </Link>
-                      <form action={submitDeleteFeedTestForm}>
+                      <form
+                        action={submitDeleteFeedTestForm}
+                        data-feedback-pending="Excluindo teste..."
+                        data-feedback-success="Teste processado. Confira os resultados atualizados."
+                      >
                         <input name="farmId" type="hidden" value={context.activeFarmId} />
                         <input name="feedTestId" type="hidden" value={test.id} />
                         <ConfirmSubmitButton

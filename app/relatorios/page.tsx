@@ -2,6 +2,7 @@ import { AppShell } from "@/components/app-shell/app-shell";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getDb } from "@/db/client";
 import { getOperationalContext } from "@/lib/app/operational-context";
 import type { PageSearchParams } from "@/lib/app/search-params";
@@ -39,7 +40,13 @@ export default async function RelatoriosPage({ searchParams }: RelatoriosPagePro
           description="Os arquivos são gerados somente com dados gravados no banco da fazenda ativa."
           title="Gerar relatório"
         >
-          <form action="/api/relatorios/export" className="grid gap-4" method="get">
+          <form
+            action="/api/relatorios/export"
+            className="grid gap-4"
+            data-feedback-pending="Gerando relatório..."
+            data-feedback-success="Relatório solicitado. Confira o download ou histórico."
+            method="get"
+          >
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             <FormField label="Mês de referência">
               <input
@@ -71,9 +78,13 @@ export default async function RelatoriosPage({ searchParams }: RelatoriosPagePro
               </select>
             </FormField>
 
-            <button className="primary-button" disabled={!context.activeFarm} type="submit">
+            <SubmitButton
+              className="primary-button"
+              disabled={!context.activeFarm}
+              pendingLabel="Gerando relatório..."
+            >
               Exportar relatório
-            </button>
+            </SubmitButton>
           </form>
 
           {!context.activeFarm ? (

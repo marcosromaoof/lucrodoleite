@@ -7,6 +7,7 @@ import { EditModeBanner } from "@/components/ui/edit-mode-banner";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getDb } from "@/db/client";
 import { getOperationalContext } from "@/lib/app/operational-context";
 import { getSearchParam, type PageSearchParams } from "@/lib/app/search-params";
@@ -102,7 +103,12 @@ export default async function DespesasPage({ searchParams }: DespesasPageProps) 
           description={`Cadastre despesas reais do ciclo ${formatDateRange(range.startDate, range.endDate)}. Em categorias elegíveis, informe volumes e valor unitário.`}
           title={editingExpense ? "Editar despesa" : "Nova despesa"}
         >
-          <form action={submitExpenseForm} className="grid gap-4">
+          <form
+            action={submitExpenseForm}
+            className="grid gap-4"
+            data-feedback-pending={editingExpense ? "Atualizando despesa..." : "Salvando despesa..."}
+            data-feedback-success="Despesa processada. Confira os lançamentos atualizados."
+          >
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             {editingExpense ? <input name="expenseId" type="hidden" value={editingExpense.id} /> : null}
             {editingExpense ? (
@@ -199,9 +205,13 @@ export default async function DespesasPage({ searchParams }: DespesasPageProps) 
             </FormField>
 
             <div className="flex flex-wrap gap-3">
-              <button className="primary-button flex-1" disabled={!context.activeFarm} type="submit">
+              <SubmitButton
+                className="primary-button flex-1"
+                disabled={!context.activeFarm}
+                pendingLabel={editingExpense ? "Atualizando..." : "Salvando..."}
+              >
                 {editingExpense ? "Atualizar despesa" : "Lançar despesa"}
-              </button>
+              </SubmitButton>
               {editingExpense ? (
                 <Link
                   className="edit-cancel-link inline-flex min-h-12 items-center justify-center"
@@ -215,7 +225,12 @@ export default async function DespesasPage({ searchParams }: DespesasPageProps) 
         </PageCard>
 
         <PageCard title="Resumo e lançamentos">
-          <form className="expense-filter-grid" method="get">
+          <form
+            className="expense-filter-grid"
+            data-feedback-pending="Aplicando filtros..."
+            data-feedback-success="Filtros aplicados. Confira a lista atualizada."
+            method="get"
+          >
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             <input name="referenceMonth" type="hidden" value={context.referenceMonth} />
             <FormField label="Categoria">
@@ -269,9 +284,13 @@ export default async function DespesasPage({ searchParams }: DespesasPageProps) 
               />
             </FormField>
             <div className="expense-filter-actions">
-              <button className="primary-button min-h-12" disabled={!context.activeFarm} type="submit">
+              <SubmitButton
+                className="primary-button min-h-12"
+                disabled={!context.activeFarm}
+                pendingLabel="Filtrando..."
+              >
                 Filtrar
-              </button>
+              </SubmitButton>
               <Link className="edit-cancel-link inline-flex min-h-12 items-center justify-center" href={`/despesas?${resetQuery}`}>
                 Limpar
               </Link>
@@ -342,7 +361,11 @@ export default async function DespesasPage({ searchParams }: DespesasPageProps) 
                           >
                             Editar
                           </Link>
-                          <form action={submitDeleteExpenseForm}>
+                          <form
+                            action={submitDeleteExpenseForm}
+                            data-feedback-pending="Excluindo despesa..."
+                            data-feedback-success="Despesa processada. Confira os lançamentos atualizados."
+                          >
                             <input name="farmId" type="hidden" value={context.activeFarmId} />
                             <input name="expenseId" type="hidden" value={expense.id} />
                             <ConfirmSubmitButton

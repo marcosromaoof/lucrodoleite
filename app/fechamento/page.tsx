@@ -10,6 +10,7 @@ import { EditModeBanner } from "@/components/ui/edit-mode-banner";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getDb } from "@/db/client";
 import { getOperationalContext } from "@/lib/app/operational-context";
 import type { PageSearchParams } from "@/lib/app/search-params";
@@ -81,7 +82,12 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
           description="Configure a regra que o laticínio usa para fechar a nota. Essa regra define o período padrão que o painel, relatórios e fechamento usam para somar produção e despesas."
           title="Regra do ciclo do laticínio"
         >
-          <form action={submitClosingCycleForm} className="grid gap-4">
+          <form
+            action={submitClosingCycleForm}
+            className="grid gap-4"
+            data-feedback-pending="Salvando regra do ciclo..."
+            data-feedback-success="Regra do ciclo processada. Confira o período padrão atualizado."
+          >
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             <div className="grid gap-4 md:grid-cols-2">
               <FormField label="Dia que inicia o ciclo">
@@ -117,9 +123,13 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
                 {defaultRangeLabel}. Se o laticínio fecha na véspera, use dia 24 como fechamento.
               </p>
             </div>
-            <button className="primary-button" disabled={!context.activeFarm} type="submit">
+            <SubmitButton
+              className="primary-button"
+              disabled={!context.activeFarm}
+              pendingLabel="Salvando..."
+            >
               Salvar regra do ciclo
-            </button>
+            </SubmitButton>
           </form>
         </PageCard>
 
@@ -143,7 +153,12 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
           description="Antes de salvar, confira ou ajuste manualmente as datas reais da nota. O cálculo abaixo usa exatamente esse intervalo."
           title={`Fechar ciclo de ${context.referenceMonthLabel}`}
         >
-          <form action={submitMonthlyClosingForm} className="grid gap-4">
+          <form
+            action={submitMonthlyClosingForm}
+            className="grid gap-4"
+            data-feedback-pending="Salvando fechamento..."
+            data-feedback-success="Fechamento processado. Confira a prévia e o histórico."
+          >
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             {closing ? (
               <EditModeBanner
@@ -200,9 +215,13 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
               </div>
             </div>
 
-            <button className="primary-button" disabled={!canClose} type="submit">
+            <SubmitButton
+              className="primary-button"
+              disabled={!canClose}
+              pendingLabel="Salvando fechamento..."
+            >
               Salvar fechamento deste período
-            </button>
+            </SubmitButton>
           </form>
 
           {!context.activeFarm ? (
@@ -248,14 +267,22 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
                         </td>
                         <td className="border-t border-[var(--border)] px-3 py-2">
                           <div className="row-actions">
-                            <form action={submitRecalculateMonthlyClosingForm}>
+                            <form
+                              action={submitRecalculateMonthlyClosingForm}
+                              data-feedback-pending="Recalculando fechamento..."
+                              data-feedback-success="Fechamento recalculado. Confira o histórico atualizado."
+                            >
                               <input name="farmId" type="hidden" value={context.activeFarmId} />
                               <input name="closingId" type="hidden" value={item.id} />
-                              <button className="action-link" type="submit">
+                              <SubmitButton className="action-link" pendingLabel="Recalculando...">
                                 Recalcular
-                              </button>
+                              </SubmitButton>
                             </form>
-                            <form action={submitDeleteMonthlyClosingForm}>
+                            <form
+                              action={submitDeleteMonthlyClosingForm}
+                              data-feedback-pending="Excluindo fechamento..."
+                              data-feedback-success="Fechamento processado. Confira o histórico atualizado."
+                            >
                               <input name="farmId" type="hidden" value={context.activeFarmId} />
                               <input name="closingId" type="hidden" value={item.id} />
                               <ConfirmSubmitButton
