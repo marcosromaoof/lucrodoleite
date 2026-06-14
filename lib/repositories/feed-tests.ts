@@ -7,6 +7,7 @@ import { desc, eq } from "drizzle-orm";
 import type { z } from "zod";
 
 export type CreateFeedTestInput = z.infer<typeof feedTestSchema> & {
+  createdBy?: string;
   days: number;
   farmId: string;
   result: FeedVariantResult;
@@ -47,6 +48,7 @@ export async function createFeedTestResult(db: AppDatabase, input: CreateFeedTes
       notes: input.notes,
       startDate: input.periodStart,
       status: "completed",
+      createdBy: input.createdBy,
     })
     .returning({ id: feedTests.id });
 

@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import writeXlsxFile from "write-excel-file/node";
+import { auth } from "@/auth";
 import { getDb } from "@/db/client";
 import { isDatabaseConfigured } from "@/lib/app/environment";
 import { calculateMonthlyEstimate } from "@/lib/calculations/financial";
 import { formatReferenceMonth, getMonthDateRange, getTodayDateKey } from "@/lib/dates/month";
 import { formatCurrency, formatLiters } from "@/lib/formatters/number";
 import { getMonthlyExpenseSummaryByReferenceMonth, listExpensesByReferenceMonth } from "@/lib/repositories/expenses";
-import { listFarms } from "@/lib/repositories/farms";
+import { getFarmForUser } from "@/lib/repositories/farms";
 import { listFeedBrands } from "@/lib/repositories/feed-brands";
 import { listFeedTestResults } from "@/lib/repositories/feed-tests";
 import { getMonthlyClosing } from "@/lib/repositories/monthly-closings";
@@ -37,6 +38,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, message: "DATABASE_URL não configurada." }, { status: 503 });
   }
 
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return NextResponse.json({ ok: false, message: "Faca login para exportar relatorios." }, { status: 401 });
+  }
+
   const url = new URL(request.url);
   const parsed = reportExportSchema.safeParse({
     farmId: url.searchParams.get("farmId") ?? "",
@@ -57,11 +65,10 @@ export async function GET(request: Request) {
   }
 
   const db = getDb();
-  const farms = await listFarms(db);
-  const farm = farms.find((item) => item.id === parsed.data.farmId);
+  const farm = await getFarmForUser(db, parsed.data.farmId, userId);
 
   if (!farm) {
-    return NextResponse.json({ ok: false, message: "Fazenda não encontrada." }, { status: 404 });
+    return NextResponse.json({ ok: false, message: "Voce nao tem acesso a esta fazenda." }, { status: 403 });
   }
 
   const range = getMonthDateRange(parsed.data.referenceMonth);
@@ -80,6 +87,7 @@ export async function GET(request: Request) {
     farmId: parsed.data.farmId,
     fileName,
     format: parsed.data.format,
+    generatedBy: userId,
     referenceEnd: range.endDate,
     referenceStart: range.startDate,
     type: parsed.data.type,

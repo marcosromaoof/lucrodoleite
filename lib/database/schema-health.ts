@@ -1,4 +1,6 @@
 export const requiredApplicationTables = [
+  "accounts",
+  "api_tokens",
   "app_settings",
   "audit_logs",
   "daily_productions",
@@ -10,7 +12,9 @@ export const requiredApplicationTables = [
   "feed_tests",
   "monthly_closings",
   "report_exports",
+  "sessions",
   "users",
+  "verification_tokens",
 ] as const;
 
 export function getMissingApplicationTables(existingTables: string[]) {

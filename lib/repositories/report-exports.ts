@@ -6,6 +6,7 @@ export type CreateReportExportInput = {
   farmId: string;
   fileName: string;
   format: string;
+  generatedBy?: string;
   referenceEnd?: string;
   referenceStart?: string;
   type: string;
@@ -28,6 +29,7 @@ export async function createReportExport(db: AppDatabase, input: CreateReportExp
       farmId: input.farmId,
       fileName: input.fileName,
       format: input.format,
+      generatedBy: input.generatedBy,
       referenceEnd: input.referenceEnd,
       referenceStart: input.referenceStart,
       type: input.type,

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db/client";
-import { requireDatabaseConfigured } from "@/lib/actions/guards";
+import { requireAuthenticatedFarmAccess } from "@/lib/actions/guards";
 import { success, validationError, type ActionState } from "@/lib/actions/action-state";
 import { calculateMonthlyClosing } from "@/lib/calculations/financial";
 import { getMonthDateRange, getTodayDateKey } from "@/lib/dates/month";
@@ -26,10 +26,10 @@ export async function createMonthlyClosingAction(formData: FormData): Promise<Ac
     return validationError("Confira os dados do fechamento.", parsed.error.flatten().fieldErrors);
   }
 
-  const databaseGuard = requireDatabaseConfigured();
+  const accessGuard = await requireAuthenticatedFarmAccess(parsed.data.farmId);
 
-  if (databaseGuard) {
-    return databaseGuard;
+  if (accessGuard.error) {
+    return accessGuard.error;
   }
 
   try {
@@ -53,6 +53,7 @@ export async function createMonthlyClosingAction(formData: FormData): Promise<Ac
 
     const created = await upsertMonthlyClosing(db, {
       ...result,
+      closedBy: accessGuard.user.id,
       farmId: parsed.data.farmId,
       milkInvoiceAmount: parsed.data.milkInvoiceAmount,
       referenceMonth: parsed.data.referenceMonth,

@@ -9,7 +9,7 @@ import { readNumber, readRequiredString, readString } from "@/lib/forms/form-dat
 import { feedBrandSchema } from "@/lib/validations/feed-brand";
 import { feedTestSchema } from "@/lib/validations/feed-test";
 import { farmScopedSchema } from "@/lib/validations/scoped";
-import { requireDatabaseConfigured } from "@/lib/actions/guards";
+import { requireAuthenticatedFarmAccess } from "@/lib/actions/guards";
 import { success, validationError, type ActionState } from "@/lib/actions/action-state";
 import { revalidatePath } from "next/cache";
 
@@ -30,10 +30,10 @@ export async function createFeedBrandAction(formData: FormData): Promise<ActionS
     return validationError("Confira os dados da marca de ração.", parsed.error.flatten().fieldErrors);
   }
 
-  const databaseGuard = requireDatabaseConfigured();
+  const accessGuard = await requireAuthenticatedFarmAccess(parsed.data.farmId);
 
-  if (databaseGuard) {
-    return databaseGuard;
+  if (accessGuard.error) {
+    return accessGuard.error;
   }
 
   try {
@@ -71,10 +71,10 @@ export async function createFeedTestAction(formData: FormData): Promise<ActionSt
     return validationError("Confira os dados do teste de ração.", parsed.error.flatten().fieldErrors);
   }
 
-  const databaseGuard = requireDatabaseConfigured();
+  const accessGuard = await requireAuthenticatedFarmAccess(parsed.data.farmId);
 
-  if (databaseGuard) {
-    return databaseGuard;
+  if (accessGuard.error) {
+    return accessGuard.error;
   }
 
   const days = countInclusiveDays(parsed.data.periodStart, parsed.data.periodEnd);
@@ -94,6 +94,7 @@ export async function createFeedTestAction(formData: FormData): Promise<ActionSt
     });
     const created = await createFeedTestResult(getDb(), {
       ...parsed.data,
+      createdBy: accessGuard.user.id,
       days,
       result,
     });

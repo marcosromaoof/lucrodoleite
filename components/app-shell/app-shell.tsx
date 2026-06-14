@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { Bell, CalendarDays, Milk, RefreshCcw } from "lucide-react";
+import { Bell, CalendarDays, LogOut, Milk, RefreshCcw } from "lucide-react";
+import { signOut } from "@/auth";
 import { getDatabaseStatusLabel, isDatabaseConfigured } from "@/lib/app/environment";
 import { navigationItems } from "@/lib/app/navigation";
+import { getOptionalSession } from "@/lib/auth/session";
 import type { FarmOption } from "@/lib/repositories/farms";
 
 type AppShellProps = {
@@ -15,7 +17,7 @@ type AppShellProps = {
   children: React.ReactNode;
 };
 
-export function AppShell({
+export async function AppShell({
   activeFarmId = "",
   activeHref,
   title,
@@ -26,7 +28,15 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const databaseConfigured = isDatabaseConfigured();
+  const session = await getOptionalSession();
   const activeFarm = farms.find((farm) => farm.id === activeFarmId) ?? null;
+  const userInitials = getInitials(session?.user?.name ?? session?.user?.email ?? "LL");
+
+  async function signOutAction() {
+    "use server";
+
+    await signOut({ redirectTo: "/" });
+  }
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-2 py-2 text-[color:var(--foreground)] sm:px-3">
@@ -143,8 +153,18 @@ export function AppShell({
                 <RefreshCcw aria-hidden="true" className="text-[color:var(--farm-green)]" size={20} />
                 <Bell aria-hidden="true" className="text-[color:var(--farm-green)]" size={20} />
                 <span className="grid size-10 place-items-center rounded-full bg-[var(--farm-green)] text-sm font-black text-white">
-                  LL
+                  {userInitials}
                 </span>
+                <form action={signOutAction}>
+                  <button
+                    aria-label="Sair"
+                    className="grid size-10 place-items-center rounded-lg border border-[var(--border)] bg-white/88 text-[color:var(--farm-green)] shadow-sm"
+                    title="Sair"
+                    type="submit"
+                  >
+                    <LogOut aria-hidden="true" size={18} />
+                  </button>
+                </form>
               </div>
             </div>
           </header>
@@ -154,4 +174,13 @@ export function AppShell({
       </div>
     </main>
   );
+}
+
+function getInitials(value: string) {
+  return value
+    .split(/\s|@/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 }

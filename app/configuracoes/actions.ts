@@ -1,10 +1,10 @@
 "use server";
 
 import { getDb } from "@/db/client";
-import { createFarm } from "@/lib/repositories/farms";
+import { createFarmForOwner } from "@/lib/repositories/farms";
 import { readNumber, readRequiredString, readString } from "@/lib/forms/form-data";
 import { farmSchema } from "@/lib/validations/farm";
-import { requireDatabaseConfigured } from "@/lib/actions/guards";
+import { requireAuthenticatedUser, requireDatabaseConfigured } from "@/lib/actions/guards";
 import { success, validationError, type ActionState } from "@/lib/actions/action-state";
 import { revalidatePath } from "next/cache";
 
@@ -28,8 +28,14 @@ export async function createFarmAction(formData: FormData): Promise<ActionState>
     return databaseGuard;
   }
 
+  const authGuard = await requireAuthenticatedUser();
+
+  if (authGuard.error) {
+    return authGuard.error;
+  }
+
   try {
-    const created = await createFarm(getDb(), parsed.data);
+    const created = await createFarmForOwner(getDb(), parsed.data, authGuard.user.id);
     revalidatePath("/", "layout");
     return success("Fazenda salva com sucesso.", created?.id);
   } catch {

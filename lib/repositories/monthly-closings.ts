@@ -4,6 +4,7 @@ import type { AppDatabase } from "./types";
 import { and, desc, eq } from "drizzle-orm";
 
 export type SaveMonthlyClosingInput = MonthlyClosingResult & {
+  closedBy?: string;
   farmId: string;
   milkInvoiceAmount: number;
   referenceMonth: string;
@@ -85,12 +86,14 @@ export async function upsertMonthlyClosing(db: AppDatabase, input: SaveMonthlyCl
     .values({
       ...values,
       closedAt: now,
+      closedBy: input.closedBy,
     })
     .onConflictDoUpdate({
       target: [monthlyClosings.farmId, monthlyClosings.referenceMonth],
       set: {
         ...values,
         closedAt: now,
+        closedBy: input.closedBy,
         updatedAt: now,
       },
     })

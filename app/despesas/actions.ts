@@ -5,7 +5,7 @@ import { createExpense } from "@/lib/repositories/expenses";
 import { readNumber, readRequiredString, readString } from "@/lib/forms/form-data";
 import { expenseSchema } from "@/lib/validations/expense";
 import { farmScopedSchema } from "@/lib/validations/scoped";
-import { requireDatabaseConfigured } from "@/lib/actions/guards";
+import { requireAuthenticatedFarmAccess } from "@/lib/actions/guards";
 import { success, validationError, type ActionState } from "@/lib/actions/action-state";
 import { revalidatePath } from "next/cache";
 
@@ -28,14 +28,17 @@ export async function createExpenseAction(formData: FormData): Promise<ActionSta
     return validationError("Confira os dados da despesa.", parsed.error.flatten().fieldErrors);
   }
 
-  const databaseGuard = requireDatabaseConfigured();
+  const accessGuard = await requireAuthenticatedFarmAccess(parsed.data.farmId);
 
-  if (databaseGuard) {
-    return databaseGuard;
+  if (accessGuard.error) {
+    return accessGuard.error;
   }
 
   try {
-    const created = await createExpense(getDb(), parsed.data);
+    const created = await createExpense(getDb(), {
+      ...parsed.data,
+      createdBy: accessGuard.user.id,
+    });
     revalidatePath("/", "layout");
     return success("Despesa salva com sucesso.", created?.id);
   } catch {

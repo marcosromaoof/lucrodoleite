@@ -5,7 +5,7 @@ import { createDailyProduction } from "@/lib/repositories/production";
 import { readInteger, readNumber, readRequiredString, readString } from "@/lib/forms/form-data";
 import { productionSchema } from "@/lib/validations/production";
 import { farmScopedSchema } from "@/lib/validations/scoped";
-import { requireDatabaseConfigured } from "@/lib/actions/guards";
+import { requireAuthenticatedFarmAccess } from "@/lib/actions/guards";
 import { success, validationError, type ActionState } from "@/lib/actions/action-state";
 import { revalidatePath } from "next/cache";
 
@@ -25,14 +25,17 @@ export async function createProductionAction(formData: FormData): Promise<Action
     return validationError("Confira os dados da produção.", parsed.error.flatten().fieldErrors);
   }
 
-  const databaseGuard = requireDatabaseConfigured();
+  const accessGuard = await requireAuthenticatedFarmAccess(parsed.data.farmId);
 
-  if (databaseGuard) {
-    return databaseGuard;
+  if (accessGuard.error) {
+    return accessGuard.error;
   }
 
   try {
-    const created = await createDailyProduction(getDb(), parsed.data);
+    const created = await createDailyProduction(getDb(), {
+      ...parsed.data,
+      createdBy: accessGuard.user.id,
+    });
     revalidatePath("/", "layout");
     return success("Produção salva com sucesso.", created?.id);
   } catch {
