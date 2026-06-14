@@ -10,6 +10,7 @@ import {
   Tag,
   Wallet,
 } from "lucide-react";
+import { recoverLegacyFarmDataAction } from "@/lib/actions/recover-legacy-data";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { DashboardAction } from "@/components/dashboard/dashboard-action";
 import { EmptyChart } from "@/components/dashboard/empty-chart";
@@ -18,6 +19,7 @@ import { IndicatorCard } from "@/components/dashboard/indicator-card";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { MonthlyChart } from "@/components/dashboard/monthly-chart";
 import { SetupCallout } from "@/components/ui/setup-callout";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getDb } from "@/db/client";
 import { getOperationalContext } from "@/lib/app/operational-context";
 import type { PageSearchParams } from "@/lib/app/search-params";
@@ -176,8 +178,24 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
         </section>
 
         {!hasFarm ? (
-          <SetupCallout title="Cadastre a primeira fazenda">
-            O painel só calcula indicadores depois que houver uma fazenda real cadastrada.
+          <SetupCallout title="Recuperar dados antigos">
+            <p>
+              Se voce ja tinha producao, despesas ou fazenda cadastrada antes do login no dominio novo, vincule esses
+              registros a sua conta atual.
+            </p>
+            <form
+              action={recoverLegacyFarmDataAction}
+              className="mt-3"
+              data-feedback-pending="Recuperando dados antigos..."
+              data-feedback-success="Dados recuperados. Atualizando painel."
+            >
+              <SubmitButton className="primary-button w-full sm:w-auto" pendingLabel="Recuperando...">
+                Recuperar dados antigos
+              </SubmitButton>
+            </form>
+            <p className="mt-3">
+              Se nao houver dados legados no banco, cadastre a primeira fazenda para liberar os indicadores.
+            </p>
           </SetupCallout>
         ) : null}
 

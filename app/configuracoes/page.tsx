@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { recoverLegacyFarmDataAction, submitDeleteFarmForm, submitFarmForm } from "@/app/configuracoes/actions";
+import { submitDeleteFarmForm, submitFarmForm } from "@/app/configuracoes/actions";
+import { recoverLegacyFarmDataAction } from "@/lib/actions/recover-legacy-data";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { EditModeBanner } from "@/components/ui/edit-mode-banner";
