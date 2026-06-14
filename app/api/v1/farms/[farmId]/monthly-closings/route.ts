@@ -1,11 +1,10 @@
 import { getDb } from "@/db/client";
 import { requireApiFarmAccess } from "@/lib/api/farm-access";
 import { apiError, apiOk, zodError } from "@/lib/api/responses";
-import { calculateMonthlyClosing } from "@/lib/calculations/financial";
-import { getMonthDateRange, getTodayDateKey, normalizeMonthKey } from "@/lib/dates/month";
-import { getMonthlyExpenseSummaryByReferenceMonth } from "@/lib/repositories/expenses";
-import { getMonthlyClosing, listMonthlyClosings, upsertMonthlyClosing } from "@/lib/repositories/monthly-closings";
-import { getMonthlyProductionSummary } from "@/lib/repositories/production";
+import { normalizeMonthKey } from "@/lib/dates/month";
+import { getFarmForUser } from "@/lib/repositories/farms";
+import { getMonthlyClosing, listMonthlyClosings } from "@/lib/repositories/monthly-closings";
+import { calculateAndSaveMonthlyClosing, MonthlyClosingError } from "@/lib/services/monthly-closing";
 import { monthlyClosingSchema } from "@/lib/validations/monthly-closing";
 
 export const runtime = "nodejs";
@@ -53,32 +52,28 @@ export async function POST(request: Request, context: MonthlyClosingsRouteContex
   }
 
   const db = getDb();
-  const range = getMonthDateRange(parsed.data.referenceMonth);
-  const [productionSummary, expenseSummary] = await Promise.all([
-    getMonthlyProductionSummary(db, farmId, range.startDate, range.endDate, getTodayDateKey()),
-    getMonthlyExpenseSummaryByReferenceMonth(db, farmId, parsed.data.referenceMonth),
-  ]);
+  const farm = await getFarmForUser(db, farmId, access.user.id);
 
-  if (productionSummary.totalLiters <= 0) {
-    return apiError(400, "production_required", "Registre a producao do mes antes de fechar.");
+  if (!farm) {
+    return apiError(403, "forbidden", "Voce nao tem acesso a esta fazenda.");
   }
 
-  const result = calculateMonthlyClosing({
-    milkInvoiceAmount: parsed.data.milkInvoiceAmount,
-    totalExpenses: expenseSummary.totalAmount,
-    totalFeedAmount: expenseSummary.feedAmount,
-    totalLiters: productionSummary.totalLiters,
-  });
-  const created = await upsertMonthlyClosing(db, {
-    ...result,
-    closedBy: access.user.id,
-    farmId,
-    milkInvoiceAmount: parsed.data.milkInvoiceAmount,
-    referenceMonth: parsed.data.referenceMonth,
-    totalExpenses: expenseSummary.totalAmount,
-    totalFeedAmount: expenseSummary.feedAmount,
-    totalLiters: productionSummary.totalLiters,
-  });
+  try {
+    const saved = await calculateAndSaveMonthlyClosing(db, {
+      closedBy: access.user.id,
+      farm,
+      milkInvoiceAmount: parsed.data.milkInvoiceAmount,
+      periodEnd: parsed.data.periodEnd,
+      periodStart: parsed.data.periodStart,
+      referenceMonth: parsed.data.referenceMonth,
+    });
 
-  return apiOk({ id: created?.id, result }, 201);
+    return apiOk({ id: saved.id, periodEnd: saved.period.endDate, periodStart: saved.period.startDate, result: saved.result }, 201);
+  } catch (error) {
+    if (error instanceof MonthlyClosingError) {
+      return apiError(error.code === "overlapping_period" ? 409 : 400, error.code, error.message);
+    }
+
+    return apiError(500, "closing_error", "Nao foi possivel salvar o fechamento.");
+  }
 }

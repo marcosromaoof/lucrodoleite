@@ -7,4 +7,6 @@ export const farmSchema = z.object({
   state: z.string().trim().length(2).optional(),
   milkCompany: z.string().trim().max(120).optional(),
   defaultPricePerLiter: z.number().finite().min(0).optional(),
+  closingCycleStartDay: z.number().int().min(1).max(31).optional(),
+  closingCycleEndDay: z.number().int().min(1).max(31).optional(),
 });

@@ -1,12 +1,14 @@
 import { monthlyClosings } from "@/db/schema";
 import type { MonthlyClosingResult } from "@/lib/calculations/financial";
 import type { AppDatabase } from "./types";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, lte, ne } from "drizzle-orm";
 
 export type SaveMonthlyClosingInput = MonthlyClosingResult & {
   closedBy?: string;
   farmId: string;
   milkInvoiceAmount: number;
+  periodEnd: string;
+  periodStart: string;
   referenceMonth: string;
   totalExpenses: number;
   totalFeedAmount: number;
@@ -17,6 +19,8 @@ export type MonthlyClosingRecord = SaveMonthlyClosingInput & {
   closedAt: Date | null;
   id: string;
   month: number;
+  periodEnd: string;
+  periodStart: string;
   year: number;
 };
 
@@ -30,6 +34,8 @@ const monthlyClosingSelect = {
   month: monthlyClosings.month,
   netProfit: monthlyClosings.netProfit,
   netResultPerLiter: monthlyClosings.netResultPerLiter,
+  periodEnd: monthlyClosings.periodEnd,
+  periodStart: monthlyClosings.periodStart,
   realPricePerLiter: monthlyClosings.realPricePerLiter,
   referenceMonth: monthlyClosings.referenceMonth,
   resultAfterFeedPerLiter: monthlyClosings.resultAfterFeedPerLiter,
@@ -50,6 +56,8 @@ type MonthlyClosingRow = {
   month: number;
   netProfit: string;
   netResultPerLiter: string;
+  periodEnd: string;
+  periodStart: string;
   realPricePerLiter: string;
   referenceMonth: string;
   resultAfterFeedPerLiter: string;
@@ -71,6 +79,8 @@ export async function upsertMonthlyClosing(db: AppDatabase, input: SaveMonthlyCl
     month,
     netProfit: input.netProfit.toString(),
     netResultPerLiter: input.netResultPerLiter.toString(),
+    periodEnd: input.periodEnd,
+    periodStart: input.periodStart,
     realPricePerLiter: input.realPricePerLiter.toString(),
     referenceMonth: input.referenceMonth,
     resultAfterFeedPerLiter: input.resultAfterFeedPerLiter.toString(),
@@ -112,6 +122,51 @@ export async function getMonthlyClosing(db: AppDatabase, farmId: string, referen
   return row ? mapMonthlyClosing(row) : null;
 }
 
+export async function getMonthlyClosingById(db: AppDatabase, farmId: string, closingId: string) {
+  const [row] = await db
+    .select(monthlyClosingSelect)
+    .from(monthlyClosings)
+    .where(and(eq(monthlyClosings.farmId, farmId), eq(monthlyClosings.id, closingId)))
+    .limit(1);
+
+  return row ? mapMonthlyClosing(row) : null;
+}
+
+export async function findMonthlyClosingsContainingDate(db: AppDatabase, farmId: string, date: string) {
+  const rows = await db
+    .select(monthlyClosingSelect)
+    .from(monthlyClosings)
+    .where(and(eq(monthlyClosings.farmId, farmId), lte(monthlyClosings.periodStart, date), gte(monthlyClosings.periodEnd, date)));
+
+  return rows.map(mapMonthlyClosing);
+}
+
+export async function hasOverlappingMonthlyClosing(
+  db: AppDatabase,
+  farmId: string,
+  periodStart: string,
+  periodEnd: string,
+  exceptClosingId?: string,
+) {
+  const conditions = [
+    eq(monthlyClosings.farmId, farmId),
+    lte(monthlyClosings.periodStart, periodEnd),
+    gte(monthlyClosings.periodEnd, periodStart),
+  ];
+
+  if (exceptClosingId) {
+    conditions.push(ne(monthlyClosings.id, exceptClosingId));
+  }
+
+  const [row] = await db
+    .select({ id: monthlyClosings.id })
+    .from(monthlyClosings)
+    .where(and(...conditions))
+    .limit(1);
+
+  return Boolean(row);
+}
+
 export async function listMonthlyClosings(db: AppDatabase, farmId: string, limit = 12) {
   const rows = await db
     .select(monthlyClosingSelect)
@@ -121,6 +176,15 @@ export async function listMonthlyClosings(db: AppDatabase, farmId: string, limit
     .limit(limit);
 
   return rows.map(mapMonthlyClosing);
+}
+
+export async function deleteMonthlyClosing(db: AppDatabase, farmId: string, closingId: string) {
+  const [deleted] = await db
+    .delete(monthlyClosings)
+    .where(and(eq(monthlyClosings.farmId, farmId), eq(monthlyClosings.id, closingId)))
+    .returning({ id: monthlyClosings.id });
+
+  return deleted;
 }
 
 function mapMonthlyClosing(row: MonthlyClosingRow): MonthlyClosingRecord {
@@ -134,6 +198,8 @@ function mapMonthlyClosing(row: MonthlyClosingRow): MonthlyClosingRecord {
     month: row.month,
     netProfit: Number(row.netProfit),
     netResultPerLiter: Number(row.netResultPerLiter),
+    periodEnd: row.periodEnd,
+    periodStart: row.periodStart,
     realPricePerLiter: Number(row.realPricePerLiter),
     referenceMonth: row.referenceMonth,
     resultAfterFeedPerLiter: Number(row.resultAfterFeedPerLiter),

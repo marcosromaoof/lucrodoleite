@@ -1,8 +1,8 @@
 import { getDb } from "@/db/client";
 import { requireApiFarmAccess } from "@/lib/api/farm-access";
-import { apiOk, zodError } from "@/lib/api/responses";
+import { apiError, apiOk, zodError } from "@/lib/api/responses";
 import { farmSchema } from "@/lib/validations/farm";
-import { getFarmForUser, updateFarm } from "@/lib/repositories/farms";
+import { deleteFarm, getFarmForUser, updateFarm } from "@/lib/repositories/farms";
 
 export const runtime = "nodejs";
 
@@ -42,4 +42,21 @@ export async function PATCH(request: Request, context: FarmRouteContext) {
   const updated = await updateFarm(getDb(), farmId, parsed.data);
 
   return apiOk({ id: updated?.id ?? farmId });
+}
+
+export async function DELETE(request: Request, context: FarmRouteContext) {
+  const { farmId } = await context.params;
+  const access = await requireApiFarmAccess(request, farmId);
+
+  if (access.error) {
+    return access.error;
+  }
+
+  const result = await deleteFarm(getDb(), farmId);
+
+  if (!result.deleted) {
+    return apiError(409, "linked_records", result.reason ?? "Fazenda possui registros vinculados.");
+  }
+
+  return apiOk({ id: farmId });
 }

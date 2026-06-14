@@ -1,7 +1,7 @@
 import { dailyProductions } from "@/db/schema";
 import type { productionSchema } from "@/lib/validations/production";
 import type { AppDatabase } from "./types";
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte, ne, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 export type CreateProductionInput = z.infer<typeof productionSchema> & {
@@ -39,6 +39,7 @@ export async function createDailyProduction(db: AppDatabase, input: CreateProduc
 export type ProductionRecord = {
   batchName: string | null;
   date: string;
+  feedTestId: string | null;
   id: string;
   lactatingCows: number | null;
   liters: number;
@@ -55,6 +56,7 @@ export async function listProductionsByMonth(
     .select({
       batchName: dailyProductions.batchName,
       date: dailyProductions.date,
+      feedTestId: dailyProductions.feedTestId,
       id: dailyProductions.id,
       lactatingCows: dailyProductions.lactatingCows,
       liters: dailyProductions.liters,
@@ -103,4 +105,95 @@ export async function getMonthlyProductionSummary(
     todayLiters: Number(summary?.todayLiters ?? 0),
     totalLiters: Number(summary?.totalLiters ?? 0),
   };
+}
+
+export async function getProductionById(
+  db: AppDatabase,
+  farmId: string,
+  productionId: string,
+): Promise<ProductionRecord | null> {
+  const [row] = await db
+    .select({
+      batchName: dailyProductions.batchName,
+      date: dailyProductions.date,
+      feedTestId: dailyProductions.feedTestId,
+      id: dailyProductions.id,
+      lactatingCows: dailyProductions.lactatingCows,
+      liters: dailyProductions.liters,
+      notes: dailyProductions.notes,
+    })
+    .from(dailyProductions)
+    .where(and(eq(dailyProductions.farmId, farmId), eq(dailyProductions.id, productionId)))
+    .limit(1);
+
+  return row ? { ...row, liters: Number(row.liters) } : null;
+}
+
+export async function getProductionByDate(
+  db: AppDatabase,
+  farmId: string,
+  date: string,
+): Promise<ProductionRecord | null> {
+  const [row] = await db
+    .select({
+      batchName: dailyProductions.batchName,
+      date: dailyProductions.date,
+      feedTestId: dailyProductions.feedTestId,
+      id: dailyProductions.id,
+      lactatingCows: dailyProductions.lactatingCows,
+      liters: dailyProductions.liters,
+      notes: dailyProductions.notes,
+    })
+    .from(dailyProductions)
+    .where(and(eq(dailyProductions.farmId, farmId), eq(dailyProductions.date, date)))
+    .limit(1);
+
+  return row ? { ...row, liters: Number(row.liters) } : null;
+}
+
+export async function updateProduction(
+  db: AppDatabase,
+  farmId: string,
+  productionId: string,
+  input: z.infer<typeof productionSchema>,
+) {
+  const [conflict] = await db
+    .select({ id: dailyProductions.id })
+    .from(dailyProductions)
+    .where(
+      and(
+        eq(dailyProductions.farmId, farmId),
+        eq(dailyProductions.date, input.date),
+        ne(dailyProductions.id, productionId),
+      ),
+    )
+    .limit(1);
+
+  if (conflict) {
+    return { conflict: true as const, record: null };
+  }
+
+  const [updated] = await db
+    .update(dailyProductions)
+    .set({
+      batchName: input.batchName,
+      date: input.date,
+      lactatingCows: input.lactatingCows,
+      liters: input.liters.toString(),
+      notes: input.notes,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(dailyProductions.farmId, farmId), eq(dailyProductions.id, productionId)))
+    .returning({ id: dailyProductions.id });
+
+  return { conflict: false as const, record: updated };
+}
+
+export async function deleteProduction(db: AppDatabase, farmId: string, productionId: string) {
+  const [deleted] = await db
+    .delete(dailyProductions)
+    .where(and(eq(dailyProductions.farmId, farmId), eq(dailyProductions.id, productionId)))
+    .returning({ id: dailyProductions.id });
+
+  return deleted;
 }

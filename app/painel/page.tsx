@@ -22,9 +22,9 @@ import { getDb } from "@/db/client";
 import { getOperationalContext } from "@/lib/app/operational-context";
 import type { PageSearchParams } from "@/lib/app/search-params";
 import { calculateMonthlyEstimate, safeDivide } from "@/lib/calculations/financial";
-import { getMonthDateRange, getTodayDateKey } from "@/lib/dates/month";
+import { getCycleDateRange, getTodayDateKey } from "@/lib/dates/month";
 import { formatCurrency, formatLiters } from "@/lib/formatters/number";
-import { getMonthlyExpenseSummaryByReferenceMonth, listExpensesByReferenceMonth } from "@/lib/repositories/expenses";
+import { getMonthlyExpenseSummary, listExpensesByMonth } from "@/lib/repositories/expenses";
 import { listFeedBrands } from "@/lib/repositories/feed-brands";
 import { listFeedTestResults } from "@/lib/repositories/feed-tests";
 import { getMonthlyProductionSummary, listProductionsByMonth } from "@/lib/repositories/production";
@@ -37,7 +37,7 @@ type PainelPageProps = {
 
 function buildChartRows(
   productions: Awaited<ReturnType<typeof listProductionsByMonth>>,
-  expenses: Awaited<ReturnType<typeof listExpensesByReferenceMonth>>,
+  expenses: Awaited<ReturnType<typeof listExpensesByMonth>>,
 ) {
   const rowsByDate = new Map<string, { date: string; expenseAmount: number; liters: number }>();
 
@@ -67,15 +67,21 @@ function buildChartRows(
 
 export default async function PainelPage({ searchParams }: PainelPageProps) {
   const context = await getOperationalContext(searchParams);
-  const range = getMonthDateRange(context.referenceMonth);
+  const range = context.activeFarm
+    ? getCycleDateRange(
+        context.referenceMonth,
+        context.activeFarm.closingCycleStartDay,
+        context.activeFarm.closingCycleEndDay,
+      )
+    : { startDate: `${context.referenceMonth}-01`, endDate: `${context.referenceMonth}-31` };
   const todayDate = getTodayDateKey();
 
   const [productionSummary, expenseSummary, productions, expenses, feedBrands, feedTests] = context.activeFarm
     ? await Promise.all([
         getMonthlyProductionSummary(getDb(), context.activeFarm.id, range.startDate, range.endDate, todayDate),
-        getMonthlyExpenseSummaryByReferenceMonth(getDb(), context.activeFarm.id, context.referenceMonth),
+        getMonthlyExpenseSummary(getDb(), context.activeFarm.id, range.startDate, range.endDate),
         listProductionsByMonth(getDb(), context.activeFarm.id, range.startDate, range.endDate),
-        listExpensesByReferenceMonth(getDb(), context.activeFarm.id, context.referenceMonth),
+        listExpensesByMonth(getDb(), context.activeFarm.id, range.startDate, range.endDate),
         listFeedBrands(getDb(), context.activeFarm.id),
         listFeedTestResults(getDb(), context.activeFarm.id),
       ])

@@ -1,12 +1,11 @@
 import { expenses } from "@/db/schema";
-import { expenseCategories, type expenseSchema } from "@/lib/validations/expense";
+import { expenseCategories, type NormalizedExpenseInput } from "@/lib/validations/expense";
 import type { AppDatabase } from "./types";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
-import type { z } from "zod";
 
 const feedExpenseCategory = expenseCategories[0];
 
-export type CreateExpenseInput = z.infer<typeof expenseSchema> & {
+export type CreateExpenseInput = NormalizedExpenseInput & {
   farmId: string;
   createdBy?: string;
 };
@@ -21,6 +20,9 @@ export async function createExpense(db: AppDatabase, input: CreateExpenseInput) 
       category: input.category,
       supplier: input.supplier,
       description: input.description,
+      quantity: input.quantity?.toString(),
+      unit: input.unit,
+      unitPrice: input.unitPrice?.toString(),
       amount: input.amount.toString(),
       feedBrandId: input.feedBrandId,
       feedTestId: input.feedTestId,
@@ -36,9 +38,29 @@ export type ExpenseRecord = {
   category: string;
   date: string;
   description: string;
+  feedBrandId: string | null;
+  feedTestId: string | null;
   id: string;
+  quantity: number | null;
   referenceMonth: string;
   supplier: string | null;
+  unit: string | null;
+  unitPrice: number | null;
+};
+
+const expenseSelect = {
+  amount: expenses.amount,
+  category: expenses.category,
+  date: expenses.date,
+  description: expenses.description,
+  feedBrandId: expenses.feedBrandId,
+  feedTestId: expenses.feedTestId,
+  id: expenses.id,
+  quantity: expenses.quantity,
+  referenceMonth: expenses.referenceMonth,
+  supplier: expenses.supplier,
+  unit: expenses.unit,
+  unitPrice: expenses.unitPrice,
 };
 
 export async function listExpensesByMonth(
@@ -48,15 +70,7 @@ export async function listExpensesByMonth(
   endDate: string,
 ): Promise<ExpenseRecord[]> {
   const rows = await db
-    .select({
-      amount: expenses.amount,
-      category: expenses.category,
-      date: expenses.date,
-      description: expenses.description,
-      id: expenses.id,
-      referenceMonth: expenses.referenceMonth,
-      supplier: expenses.supplier,
-    })
+    .select(expenseSelect)
     .from(expenses)
     .where(and(eq(expenses.farmId, farmId), gte(expenses.date, startDate), lte(expenses.date, endDate)))
     .orderBy(desc(expenses.date));
@@ -64,6 +78,8 @@ export async function listExpensesByMonth(
   return rows.map((row) => ({
     ...row,
     amount: Number(row.amount),
+    quantity: toNullableNumber(row.quantity),
+    unitPrice: toNullableNumber(row.unitPrice),
   }));
 }
 
@@ -93,15 +109,7 @@ export async function listExpensesByReferenceMonth(
   referenceMonth: string,
 ): Promise<ExpenseRecord[]> {
   const rows = await db
-    .select({
-      amount: expenses.amount,
-      category: expenses.category,
-      date: expenses.date,
-      description: expenses.description,
-      id: expenses.id,
-      referenceMonth: expenses.referenceMonth,
-      supplier: expenses.supplier,
-    })
+    .select(expenseSelect)
     .from(expenses)
     .where(and(eq(expenses.farmId, farmId), eq(expenses.referenceMonth, referenceMonth)))
     .orderBy(desc(expenses.date));
@@ -109,6 +117,8 @@ export async function listExpensesByReferenceMonth(
   return rows.map((row) => ({
     ...row,
     amount: Number(row.amount),
+    quantity: toNullableNumber(row.quantity),
+    unitPrice: toNullableNumber(row.unitPrice),
   }));
 }
 
@@ -172,4 +182,66 @@ export async function summarizeExpensesByCategory(
     category: row.category,
     totalAmount: Number(row.totalAmount),
   }));
+}
+
+export async function getExpenseById(
+  db: AppDatabase,
+  farmId: string,
+  expenseId: string,
+): Promise<ExpenseRecord | null> {
+  const [row] = await db
+    .select(expenseSelect)
+    .from(expenses)
+    .where(and(eq(expenses.farmId, farmId), eq(expenses.id, expenseId)))
+    .limit(1);
+
+  return row
+    ? {
+        ...row,
+        amount: Number(row.amount),
+        quantity: toNullableNumber(row.quantity),
+        unitPrice: toNullableNumber(row.unitPrice),
+      }
+    : null;
+}
+
+export async function updateExpense(
+  db: AppDatabase,
+  farmId: string,
+  expenseId: string,
+  input: NormalizedExpenseInput,
+) {
+  const [updated] = await db
+    .update(expenses)
+    .set({
+      amount: input.amount.toString(),
+      category: input.category,
+      date: input.date,
+      description: input.description,
+      feedBrandId: input.feedBrandId,
+      feedTestId: input.feedTestId,
+      quantity: input.quantity?.toString(),
+      referenceMonth: input.referenceMonth,
+      supplier: input.supplier,
+      unit: input.unit,
+      unitPrice: input.unitPrice?.toString(),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(expenses.farmId, farmId), eq(expenses.id, expenseId)))
+    .returning({ id: expenses.id });
+
+  return updated;
+}
+
+export async function deleteExpense(db: AppDatabase, farmId: string, expenseId: string) {
+  const [deleted] = await db
+    .delete(expenses)
+    .where(and(eq(expenses.farmId, farmId), eq(expenses.id, expenseId)))
+    .returning({ id: expenses.id });
+
+  return deleted;
+}
+
+function toNullableNumber(value: string | null | undefined) {
+  return value === null || value === undefined ? null : Number(value);
 }

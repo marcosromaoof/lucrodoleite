@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "@/db/client";
 import { requireAuthenticatedFarmAccess } from "@/lib/actions/guards";
 import { success, validationError, type ActionState } from "@/lib/actions/action-state";
-import { calculateMonthlyClosing } from "@/lib/calculations/financial";
-import { getMonthDateRange, getTodayDateKey } from "@/lib/dates/month";
-import { readNumber, readRequiredString } from "@/lib/forms/form-data";
-import { getMonthlyExpenseSummaryByReferenceMonth } from "@/lib/repositories/expenses";
-import { upsertMonthlyClosing } from "@/lib/repositories/monthly-closings";
-import { getMonthlyProductionSummary } from "@/lib/repositories/production";
+import { readNumber, readRequiredString, readString } from "@/lib/forms/form-data";
+import { getFarmById } from "@/lib/repositories/farms";
+import { deleteMonthlyClosing } from "@/lib/repositories/monthly-closings";
+import {
+  calculateAndSaveMonthlyClosing,
+  MonthlyClosingError,
+  recalculateExistingMonthlyClosingById,
+} from "@/lib/services/monthly-closing";
 import { farmScopedSchema } from "@/lib/validations/scoped";
 import { monthlyClosingSchema } from "@/lib/validations/monthly-closing";
 
@@ -19,6 +21,8 @@ export async function createMonthlyClosingAction(formData: FormData): Promise<Ac
     .safeParse({
       farmId: readRequiredString(formData, "farmId"),
       milkInvoiceAmount: readNumber(formData, "milkInvoiceAmount"),
+      periodEnd: readString(formData, "periodEnd"),
+      periodStart: readString(formData, "periodStart"),
       referenceMonth: readRequiredString(formData, "referenceMonth"),
     });
 
@@ -34,41 +38,89 @@ export async function createMonthlyClosingAction(formData: FormData): Promise<Ac
 
   try {
     const db = getDb();
-    const range = getMonthDateRange(parsed.data.referenceMonth);
-    const [productionSummary, expenseSummary] = await Promise.all([
-      getMonthlyProductionSummary(db, parsed.data.farmId, range.startDate, range.endDate, getTodayDateKey()),
-      getMonthlyExpenseSummaryByReferenceMonth(db, parsed.data.farmId, parsed.data.referenceMonth),
-    ]);
+    const farm = await getFarmById(db, parsed.data.farmId);
 
-    if (productionSummary.totalLiters <= 0) {
-      return validationError("Registre a produção do mês antes de fechar.");
+    if (!farm) {
+      return validationError("Fazenda não encontrada.");
     }
 
-    const result = calculateMonthlyClosing({
-      milkInvoiceAmount: parsed.data.milkInvoiceAmount,
-      totalExpenses: expenseSummary.totalAmount,
-      totalFeedAmount: expenseSummary.feedAmount,
-      totalLiters: productionSummary.totalLiters,
-    });
-
-    const created = await upsertMonthlyClosing(db, {
-      ...result,
+    const saved = await calculateAndSaveMonthlyClosing(db, {
       closedBy: accessGuard.user.id,
-      farmId: parsed.data.farmId,
+      farm,
       milkInvoiceAmount: parsed.data.milkInvoiceAmount,
+      periodEnd: parsed.data.periodEnd,
+      periodStart: parsed.data.periodStart,
       referenceMonth: parsed.data.referenceMonth,
-      totalExpenses: expenseSummary.totalAmount,
-      totalFeedAmount: expenseSummary.feedAmount,
-      totalLiters: productionSummary.totalLiters,
     });
 
     revalidatePath("/", "layout");
-    return success("Fechamento salvo com sucesso.", created?.id);
-  } catch {
+
+    return success("Fechamento salvo com sucesso.", saved.id);
+  } catch (error) {
+    if (error instanceof MonthlyClosingError) {
+      return validationError(error.message);
+    }
+
     return validationError("Não foi possível salvar o fechamento agora.");
   }
 }
 
+export async function recalculateMonthlyClosingAction(formData: FormData): Promise<ActionState> {
+  const farmId = readRequiredString(formData, "farmId");
+  const closingId = readRequiredString(formData, "closingId");
+
+  if (!farmId || !closingId) {
+    return validationError("Fechamento inválido.");
+  }
+
+  const accessGuard = await requireAuthenticatedFarmAccess(farmId);
+
+  if (accessGuard.error) {
+    return accessGuard.error;
+  }
+
+  try {
+    await recalculateExistingMonthlyClosingById(getDb(), farmId, closingId);
+    revalidatePath("/", "layout");
+
+    return success("Fechamento recalculado com sucesso.", closingId);
+  } catch (error) {
+    if (error instanceof MonthlyClosingError) {
+      return validationError(error.message);
+    }
+
+    return validationError("Não foi possível recalcular o fechamento agora.");
+  }
+}
+
+export async function deleteMonthlyClosingAction(formData: FormData): Promise<ActionState> {
+  const farmId = readRequiredString(formData, "farmId");
+  const closingId = readRequiredString(formData, "closingId");
+
+  if (!farmId || !closingId) {
+    return validationError("Fechamento inválido.");
+  }
+
+  const accessGuard = await requireAuthenticatedFarmAccess(farmId);
+
+  if (accessGuard.error) {
+    return accessGuard.error;
+  }
+
+  await deleteMonthlyClosing(getDb(), farmId, closingId);
+  revalidatePath("/", "layout");
+
+  return success("Fechamento excluído com sucesso.", closingId);
+}
+
 export async function submitMonthlyClosingForm(formData: FormData): Promise<void> {
   await createMonthlyClosingAction(formData);
+}
+
+export async function submitRecalculateMonthlyClosingForm(formData: FormData): Promise<void> {
+  await recalculateMonthlyClosingAction(formData);
+}
+
+export async function submitDeleteMonthlyClosingForm(formData: FormData): Promise<void> {
+  await deleteMonthlyClosingAction(formData);
 }

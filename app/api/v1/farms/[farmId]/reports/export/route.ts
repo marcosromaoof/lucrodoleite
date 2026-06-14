@@ -1,7 +1,7 @@
 import { getDb } from "@/db/client";
 import { requireApiFarmAccess } from "@/lib/api/farm-access";
 import { apiError, apiOk, zodError } from "@/lib/api/responses";
-import { getMonthDateRange } from "@/lib/dates/month";
+import { getCycleDateRange } from "@/lib/dates/month";
 import { getFarmForUser } from "@/lib/repositories/farms";
 import { createReportExport } from "@/lib/repositories/report-exports";
 import {
@@ -50,7 +50,11 @@ export async function GET(request: Request, context: ReportExportRouteContext) {
     return apiError(403, "forbidden", "Voce nao tem acesso a esta fazenda.");
   }
 
-  const range = getMonthDateRange(parsed.data.referenceMonth);
+  const range = getCycleDateRange(
+    parsed.data.referenceMonth,
+    farm.closingCycleStartDay,
+    farm.closingCycleEndDay,
+  );
   const report = await buildReportData({
     farmId,
     farmName: farm.name,

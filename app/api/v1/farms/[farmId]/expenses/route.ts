@@ -1,14 +1,16 @@
 import { getDb } from "@/db/client";
 import { requireApiFarmAccess } from "@/lib/api/farm-access";
-import { apiOk, zodError } from "@/lib/api/responses";
-import { normalizeMonthKey } from "@/lib/dates/month";
+import { apiError, apiOk, zodError } from "@/lib/api/responses";
+import { getCycleDateRange, normalizeMonthKey } from "@/lib/dates/month";
 import {
   createExpense,
-  getMonthlyExpenseSummaryByReferenceMonth,
-  listExpensesByReferenceMonth,
-  summarizeExpensesByCategoryByReferenceMonth,
+  getMonthlyExpenseSummary,
+  listExpensesByMonth,
+  summarizeExpensesByCategory,
 } from "@/lib/repositories/expenses";
-import { expenseSchema } from "@/lib/validations/expense";
+import { getFarmForUser } from "@/lib/repositories/farms";
+import { MonthlyClosingError, recalculateClosingsForDates } from "@/lib/services/monthly-closing";
+import { expenseSchema, normalizeExpenseInput } from "@/lib/validations/expense";
 
 export const runtime = "nodejs";
 
@@ -29,13 +31,20 @@ export async function GET(request: Request, context: ExpensesRouteContext) {
   const url = new URL(request.url);
   const referenceMonth = normalizeMonthKey(url.searchParams.get("referenceMonth") ?? undefined);
   const db = getDb();
+  const farm = await getFarmForUser(db, farmId, access.user.id);
+
+  if (!farm) {
+    return apiError(403, "forbidden", "Voce nao tem acesso a esta fazenda.");
+  }
+
+  const range = getCycleDateRange(referenceMonth, farm.closingCycleStartDay, farm.closingCycleEndDay);
   const [records, summary, byCategory] = await Promise.all([
-    listExpensesByReferenceMonth(db, farmId, referenceMonth),
-    getMonthlyExpenseSummaryByReferenceMonth(db, farmId, referenceMonth),
-    summarizeExpensesByCategoryByReferenceMonth(db, farmId, referenceMonth),
+    listExpensesByMonth(db, farmId, range.startDate, range.endDate),
+    getMonthlyExpenseSummary(db, farmId, range.startDate, range.endDate),
+    summarizeExpensesByCategory(db, farmId, range.startDate, range.endDate),
   ]);
 
-  return apiOk({ byCategory, records, referenceMonth, summary });
+  return apiOk({ byCategory, periodEnd: range.endDate, periodStart: range.startDate, records, referenceMonth, summary });
 }
 
 export async function POST(request: Request, context: ExpensesRouteContext) {
@@ -52,11 +61,21 @@ export async function POST(request: Request, context: ExpensesRouteContext) {
     return zodError(parsed.error.flatten().fieldErrors);
   }
 
-  const created = await createExpense(getDb(), {
-    ...parsed.data,
-    createdBy: access.user.id,
-    farmId,
-  });
+  try {
+    const db = getDb();
+    const created = await createExpense(db, {
+      ...normalizeExpenseInput(parsed.data),
+      createdBy: access.user.id,
+      farmId,
+    });
+    await recalculateClosingsForDates(db, farmId, [parsed.data.date]);
 
-  return apiOk({ id: created?.id }, 201);
+    return apiOk({ id: created?.id }, 201);
+  } catch (error) {
+    if (error instanceof MonthlyClosingError) {
+      return apiError(400, error.code, error.message);
+    }
+
+    return apiError(500, "expense_error", "Nao foi possivel salvar a despesa.");
+  }
 }

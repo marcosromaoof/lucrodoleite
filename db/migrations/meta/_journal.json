@@ -15,6 +15,13 @@
       "when": 1781404295964,
       "tag": "0001_chilly_ultimatum",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781414534933,
+      "tag": "0002_omniscient_wong",
+      "breakpoints": true
     }
   ]
 }

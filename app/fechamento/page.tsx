@@ -1,5 +1,10 @@
-import { submitMonthlyClosingForm } from "@/app/fechamento/actions";
+import {
+  submitDeleteMonthlyClosingForm,
+  submitMonthlyClosingForm,
+  submitRecalculateMonthlyClosingForm,
+} from "@/app/fechamento/actions";
 import { AppShell } from "@/components/app-shell/app-shell";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
@@ -7,9 +12,9 @@ import { getDb } from "@/db/client";
 import { getOperationalContext } from "@/lib/app/operational-context";
 import type { PageSearchParams } from "@/lib/app/search-params";
 import { calculateMonthlyClosing } from "@/lib/calculations/financial";
-import { formatReferenceMonth, getMonthDateRange, getTodayDateKey } from "@/lib/dates/month";
+import { formatDateRange, formatReferenceMonth, getCycleDateRange, getTodayDateKey } from "@/lib/dates/month";
 import { formatCurrency, formatLiters } from "@/lib/formatters/number";
-import { getMonthlyExpenseSummaryByReferenceMonth } from "@/lib/repositories/expenses";
+import { getMonthlyExpenseSummary } from "@/lib/repositories/expenses";
 import { getMonthlyClosing, listMonthlyClosings } from "@/lib/repositories/monthly-closings";
 import { getMonthlyProductionSummary } from "@/lib/repositories/production";
 
@@ -21,29 +26,32 @@ type FechamentoPageProps = {
 
 export default async function FechamentoPage({ searchParams }: FechamentoPageProps) {
   const context = await getOperationalContext(searchParams);
-  const range = getMonthDateRange(context.referenceMonth);
   const activeFarm = context.activeFarm;
+  const defaultRange = activeFarm
+    ? getCycleDateRange(context.referenceMonth, activeFarm.closingCycleStartDay, activeFarm.closingCycleEndDay)
+    : { startDate: `${context.referenceMonth}-01`, endDate: `${context.referenceMonth}-31` };
 
-  const [productionSummary, expenseSummary, closing, closingHistory] = activeFarm
-    ? await (async () => {
-        const db = getDb();
+  const [closing, closingHistory] = activeFarm
+    ? await Promise.all([
+        getMonthlyClosing(getDb(), activeFarm.id, context.referenceMonth),
+        listMonthlyClosings(getDb(), activeFarm.id),
+      ])
+    : [null, []];
+  const range = closing
+    ? { startDate: closing.periodStart, endDate: closing.periodEnd }
+    : defaultRange;
 
-        return Promise.all([
-          getMonthlyProductionSummary(db, activeFarm.id, range.startDate, range.endDate, getTodayDateKey()),
-          getMonthlyExpenseSummaryByReferenceMonth(db, activeFarm.id, context.referenceMonth),
-          getMonthlyClosing(db, activeFarm.id, context.referenceMonth),
-          listMonthlyClosings(db, activeFarm.id),
-        ]);
-      })()
+  const [productionSummary, expenseSummary] = activeFarm
+    ? await Promise.all([
+        getMonthlyProductionSummary(getDb(), activeFarm.id, range.startDate, range.endDate, getTodayDateKey()),
+        getMonthlyExpenseSummary(getDb(), activeFarm.id, range.startDate, range.endDate),
+      ])
     : [
         { recordCount: 0, todayLiters: 0, totalLiters: 0 },
         { feedAmount: 0, totalAmount: 0 },
-        null,
-        [],
       ];
 
-  const projectedInvoice =
-    productionSummary.totalLiters * (activeFarm?.defaultPricePerLiter ?? 0);
+  const projectedInvoice = productionSummary.totalLiters * (activeFarm?.defaultPricePerLiter ?? 0);
   const invoiceAmount = closing?.milkInvoiceAmount ?? projectedInvoice;
   const preview = calculateMonthlyClosing({
     milkInvoiceAmount: invoiceAmount,
@@ -65,12 +73,12 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
     >
       <div className="grid gap-5 p-5 sm:p-8 xl:grid-cols-[1fr_0.75fr]">
         <PageCard
-          description="O fechamento usa produção real do mês e despesas por mês de referência. Informe o valor da nota do leite para salvar o resultado."
+          description="Informe a competência e o período real da nota do laticínio. O cálculo usa produção e despesas dentro dessas datas."
           title={`Fechar ${context.referenceMonthLabel}`}
         >
           <form action={submitMonthlyClosingForm} className="grid gap-4">
             <input name="farmId" type="hidden" value={context.activeFarmId} />
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <FormField label="Mês de referência">
                 <input
                   className="field"
@@ -80,27 +88,34 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
                   type="month"
                 />
               </FormField>
-              <FormField label="Valor total da nota">
-                <input
-                  className="field"
-                  defaultValue={invoiceAmount > 0 ? invoiceAmount.toFixed(2) : undefined}
-                  min="0"
-                  name="milkInvoiceAmount"
-                  required
-                  step="0.01"
-                  type="number"
-                />
+              <FormField label="Data inicial">
+                <input className="field" defaultValue={range.startDate} name="periodStart" required type="date" />
+              </FormField>
+              <FormField label="Data final">
+                <input className="field" defaultValue={range.endDate} name="periodEnd" required type="date" />
               </FormField>
             </div>
 
+            <FormField label="Valor total da nota">
+              <input
+                className="field"
+                defaultValue={invoiceAmount > 0 ? invoiceAmount.toFixed(2) : undefined}
+                min="0"
+                name="milkInvoiceAmount"
+                required
+                step="0.01"
+                type="number"
+              />
+            </FormField>
+
             <div className="grid gap-3 rounded-lg border border-[var(--border)] bg-[var(--milk-white)] p-4 text-sm md:grid-cols-3">
+              <div>
+                <span className="text-[color:var(--muted)]">Período apurado</span>
+                <strong className="block text-base">{formatDateRange(range.startDate, range.endDate)}</strong>
+              </div>
               <div>
                 <span className="text-[color:var(--muted)]">Litros apurados</span>
                 <strong className="block text-lg">{formatLiters(productionSummary.totalLiters)}</strong>
-              </div>
-              <div>
-                <span className="text-[color:var(--muted)]">Despesa com ração</span>
-                <strong className="block text-lg">{formatCurrency(expenseSummary.feedAmount)}</strong>
               </div>
               <div>
                 <span className="text-[color:var(--muted)]">Despesas totais</span>
@@ -120,7 +135,7 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
           ) : productionSummary.totalLiters <= 0 ? (
             <div className="mt-4">
               <SetupCallout title="Produção ainda não registrada">
-                Registre litros produzidos em {context.referenceMonthLabel} antes de fechar o mês.
+                Registre litros produzidos entre {formatDateRange(range.startDate, range.endDate)} antes de fechar.
               </SetupCallout>
             </div>
           ) : null}
@@ -130,17 +145,14 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
           <div className="grid gap-3">
             <Indicator label="Preço real por litro" value={formatCurrency(preview.realPricePerLiter)} />
             <Indicator label="Custo da ração por litro" value={formatCurrency(preview.feedCostPerLiter)} />
-            <Indicator
-              label="Resultado livre após ração"
-              value={formatCurrency(preview.resultAfterFeedPerLiter)}
-            />
+            <Indicator label="Resultado livre após ração" value={formatCurrency(preview.resultAfterFeedPerLiter)} />
             <Indicator label="Custo total por litro" value={formatCurrency(preview.totalCostPerLiter)} />
             <Indicator label="Resultado líquido por litro" value={formatCurrency(preview.netResultPerLiter)} />
             <Indicator label="Lucro líquido" value={formatCurrency(preview.netProfit)} emphasis />
           </div>
           {closing?.closedAt ? (
             <p className="mt-4 text-xs text-[color:var(--muted)]">
-              Salvo em {closing.closedAt.toLocaleString("pt-BR")}.
+              Salvo em {closing.closedAt.toLocaleString("pt-BR")} para {formatDateRange(closing.periodStart, closing.periodEnd)}.
             </p>
           ) : null}
         </PageCard>
@@ -153,9 +165,10 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
               <table className="w-full border-collapse text-sm">
                 <thead className="bg-[var(--milk-white)]">
                   <tr>
-                    <th className="border-b border-[var(--border)] px-3 py-2 text-left">Mês</th>
-                    <th className="border-b border-[var(--border)] px-3 py-2 text-right">Litros</th>
+                    <th className="border-b border-[var(--border)] px-3 py-2 text-left">Competência</th>
+                    <th className="border-b border-[var(--border)] px-3 py-2 text-left">Período</th>
                     <th className="border-b border-[var(--border)] px-3 py-2 text-right">Lucro</th>
+                    <th className="border-b border-[var(--border)] px-3 py-2 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -164,11 +177,36 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
                       <td className="border-t border-[var(--border)] px-3 py-2">
                         {formatReferenceMonth(item.referenceMonth)}
                       </td>
-                      <td className="border-t border-[var(--border)] px-3 py-2 text-right">
-                        {formatLiters(item.totalLiters)}
+                      <td className="border-t border-[var(--border)] px-3 py-2">
+                        <span className="block">{formatDateRange(item.periodStart, item.periodEnd)}</span>
+                        <span className="text-xs text-[color:var(--muted)]">{formatLiters(item.totalLiters)}</span>
                       </td>
                       <td className="border-t border-[var(--border)] px-3 py-2 text-right font-bold">
                         {formatCurrency(item.netProfit)}
+                      </td>
+                      <td className="border-t border-[var(--border)] px-3 py-2">
+                        <div className="flex justify-end gap-2">
+                          <form action={submitRecalculateMonthlyClosingForm}>
+                            <input name="farmId" type="hidden" value={context.activeFarmId} />
+                            <input name="closingId" type="hidden" value={item.id} />
+                            <button
+                              className="rounded-md border border-[var(--border)] px-2 py-1 font-bold text-[color:var(--farm-green)]"
+                              type="submit"
+                            >
+                              Recalcular
+                            </button>
+                          </form>
+                          <form action={submitDeleteMonthlyClosingForm}>
+                            <input name="farmId" type="hidden" value={context.activeFarmId} />
+                            <input name="closingId" type="hidden" value={item.id} />
+                            <ConfirmSubmitButton
+                              className="rounded-md border border-[var(--wood)] px-2 py-1 font-bold text-[color:var(--wood)]"
+                              message="Excluir este fechamento?"
+                            >
+                              Excluir
+                            </ConfirmSubmitButton>
+                          </form>
+                        </div>
                       </td>
                     </tr>
                   ))}

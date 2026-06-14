@@ -5,7 +5,7 @@ import { getDb } from "@/db/client";
 import { calculateMonthlyEstimate } from "@/lib/calculations/financial";
 import { formatReferenceMonth, getTodayDateKey } from "@/lib/dates/month";
 import { formatCurrency, formatLiters } from "@/lib/formatters/number";
-import { getMonthlyExpenseSummaryByReferenceMonth, listExpensesByReferenceMonth } from "@/lib/repositories/expenses";
+import { getMonthlyExpenseSummary, listExpensesByMonth } from "@/lib/repositories/expenses";
 import { listFeedBrands } from "@/lib/repositories/feed-brands";
 import { listFeedTestResults } from "@/lib/repositories/feed-tests";
 import { getMonthlyClosing } from "@/lib/repositories/monthly-closings";
@@ -65,7 +65,7 @@ export async function buildReportData(input: {
   }
 
   if (input.type === "expenses") {
-    const expenses = await listExpensesByReferenceMonth(db, input.farmId, input.referenceMonth);
+    const expenses = await listExpensesByMonth(db, input.farmId, input.referenceStart, input.referenceEnd);
 
     return {
       columns: [
@@ -74,6 +74,9 @@ export async function buildReportData(input: {
         { header: "Categoria", key: "category" },
         { header: "Fornecedor", key: "supplier" },
         { header: "Descricao", key: "description" },
+        { header: "Quantidade", key: "quantity" },
+        { header: "Unidade", key: "unit" },
+        { header: "Valor unitario", key: "unitPrice" },
         { header: "Valor", key: "amount" },
       ],
       rows: expenses
@@ -83,8 +86,11 @@ export async function buildReportData(input: {
           category: item.category,
           date: item.date,
           description: item.description,
+          quantity: item.quantity,
           referenceMonth: item.referenceMonth,
           supplier: item.supplier,
+          unit: item.unit,
+          unitPrice: item.unitPrice,
         })),
       subtitle,
       title,
@@ -162,6 +168,7 @@ export async function buildReportData(input: {
       rows: closing
         ? [
             { metric: "Litros apurados", value: formatLiters(closing.totalLiters) },
+            { metric: "Periodo", value: `${closing.periodStart} a ${closing.periodEnd}` },
             { metric: "Valor total da nota", value: formatCurrency(closing.milkInvoiceAmount) },
             { metric: "Preco real por litro", value: formatCurrency(closing.realPricePerLiter) },
             { metric: "Despesa com racao", value: formatCurrency(closing.totalFeedAmount) },
@@ -178,7 +185,7 @@ export async function buildReportData(input: {
 
   const [productionSummary, expenseSummary] = await Promise.all([
     getMonthlyProductionSummary(db, input.farmId, input.referenceStart, input.referenceEnd, getTodayDateKey()),
-    getMonthlyExpenseSummaryByReferenceMonth(db, input.farmId, input.referenceMonth),
+    getMonthlyExpenseSummary(db, input.farmId, input.referenceStart, input.referenceEnd),
   ]);
   const estimate = calculateMonthlyEstimate({
     estimatedPricePerLiter: input.farmPricePerLiter,

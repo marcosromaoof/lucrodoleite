@@ -2,8 +2,8 @@ import { getDb } from "@/db/client";
 import { requireApiFarmAccess } from "@/lib/api/farm-access";
 import { apiOk } from "@/lib/api/responses";
 import { calculateMonthlyEstimate, safeDivide } from "@/lib/calculations/financial";
-import { getMonthDateRange, getTodayDateKey, normalizeMonthKey } from "@/lib/dates/month";
-import { getMonthlyExpenseSummaryByReferenceMonth, listExpensesByReferenceMonth } from "@/lib/repositories/expenses";
+import { getCycleDateRange, getTodayDateKey, normalizeMonthKey } from "@/lib/dates/month";
+import { getMonthlyExpenseSummary, listExpensesByMonth } from "@/lib/repositories/expenses";
 import { getFarmForUser } from "@/lib/repositories/farms";
 import { listFeedBrands } from "@/lib/repositories/feed-brands";
 import { listFeedTestResults } from "@/lib/repositories/feed-tests";
@@ -27,15 +27,20 @@ export async function GET(request: Request, context: DashboardSummaryRouteContex
 
   const url = new URL(request.url);
   const referenceMonth = normalizeMonthKey(url.searchParams.get("referenceMonth") ?? undefined);
-  const range = getMonthDateRange(referenceMonth);
   const todayDate = getTodayDateKey();
   const db = getDb();
-  const [farm, productionSummary, expenseSummary, productions, expenses, feedBrands, feedTests] = await Promise.all([
-    getFarmForUser(db, farmId, access.user.id),
+  const farm = await getFarmForUser(db, farmId, access.user.id);
+
+  if (!farm) {
+    return apiOk({ farm: null, referenceMonth });
+  }
+
+  const range = getCycleDateRange(referenceMonth, farm.closingCycleStartDay, farm.closingCycleEndDay);
+  const [productionSummary, expenseSummary, productions, expenses, feedBrands, feedTests] = await Promise.all([
     getMonthlyProductionSummary(db, farmId, range.startDate, range.endDate, todayDate),
-    getMonthlyExpenseSummaryByReferenceMonth(db, farmId, referenceMonth),
+    getMonthlyExpenseSummary(db, farmId, range.startDate, range.endDate),
     listProductionsByMonth(db, farmId, range.startDate, range.endDate),
-    listExpensesByReferenceMonth(db, farmId, referenceMonth),
+    listExpensesByMonth(db, farmId, range.startDate, range.endDate),
     listFeedBrands(db, farmId),
     listFeedTestResults(db, farmId),
   ]);
@@ -57,6 +62,8 @@ export async function GET(request: Request, context: DashboardSummaryRouteContex
     productionSummary,
     recentExpenses: expenses.slice(0, 12),
     recentProductions: productions.slice(0, 12),
+    periodEnd: range.endDate,
+    periodStart: range.startDate,
     referenceMonth,
     resultAfterFeedPerLiter: pricePerLiter - feedCostPerLiter,
     resultEstimate: estimate,
