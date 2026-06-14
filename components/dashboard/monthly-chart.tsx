@@ -16,11 +16,11 @@ export function MonthlyChart({ rows }: MonthlyChartProps) {
   const maxExpenses = Math.max(...rows.map((row) => row.expenseAmount), 0);
 
   return (
-    <div className="h-full min-h-[245px] rounded-lg border border-[var(--border)] bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between gap-4">
+    <div className="panel-card h-full min-h-[245px]">
+      <div className="panel-header">
         <div>
-          <h2 className="text-lg font-bold">Produção x Despesas</h2>
-          <p className="mt-1 text-xs text-[color:var(--muted)]">Dias com registros reais no mês</p>
+          <h2 className="panel-title">Produção x Despesas</h2>
+          <p className="panel-subtitle">Dias com registros reais no período</p>
         </div>
         <a className="text-xs font-bold text-[color:var(--farm-green)]" href="/relatorios">
           Ver relatório completo →

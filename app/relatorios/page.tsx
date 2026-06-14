@@ -34,7 +34,7 @@ export default async function RelatoriosPage({ searchParams }: RelatoriosPagePro
       referenceMonthLabel={context.referenceMonthLabel}
       title="Relatórios"
     >
-      <div className="grid gap-5 p-5 sm:p-8 xl:grid-cols-[1fr_0.75fr]">
+      <div className="grid gap-5 xl:grid-cols-[1fr_0.75fr]">
         <PageCard
           description="Os arquivos são gerados somente com dados gravados no banco da fazenda ativa."
           title="Gerar relatório"

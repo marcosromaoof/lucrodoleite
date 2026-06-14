@@ -5,6 +5,7 @@ import {
 } from "@/app/fechamento/actions";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
+import { EditModeBanner } from "@/components/ui/edit-mode-banner";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
@@ -60,6 +61,7 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
     totalLiters: productionSummary.totalLiters,
   });
   const canClose = Boolean(context.activeFarm) && productionSummary.totalLiters > 0;
+  const baseQuery = `farmId=${context.activeFarmId}&referenceMonth=${context.referenceMonth}`;
 
   return (
     <AppShell
@@ -71,13 +73,23 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
       referenceMonthLabel={context.referenceMonthLabel}
       title="Fechamento"
     >
-      <div className="grid gap-5 p-5 sm:p-8 xl:grid-cols-[1fr_0.75fr]">
+      <div className="grid gap-5 xl:grid-cols-[1fr_0.75fr]">
         <PageCard
           description="Informe a competência e o período real da nota do laticínio. O cálculo usa produção e despesas dentro dessas datas."
           title={`Fechar ${context.referenceMonthLabel}`}
         >
           <form action={submitMonthlyClosingForm} className="grid gap-4">
             <input name="farmId" type="hidden" value={context.activeFarmId} />
+            {closing ? (
+              <EditModeBanner
+                cancelHref={`/fechamento?${baseQuery}`}
+                entity="Fechamento salvo"
+                summary={`${formatReferenceMonth(closing.referenceMonth)} - ${formatDateRange(
+                  closing.periodStart,
+                  closing.periodEnd,
+                )}`}
+              />
+            ) : null}
             <div className="grid gap-4 md:grid-cols-3">
               <FormField label="Mês de referência">
                 <input
@@ -185,12 +197,12 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
                         {formatCurrency(item.netProfit)}
                       </td>
                       <td className="border-t border-[var(--border)] px-3 py-2">
-                        <div className="flex justify-end gap-2">
+                        <div className="row-actions">
                           <form action={submitRecalculateMonthlyClosingForm}>
                             <input name="farmId" type="hidden" value={context.activeFarmId} />
                             <input name="closingId" type="hidden" value={item.id} />
                             <button
-                              className="rounded-md border border-[var(--border)] px-2 py-1 font-bold text-[color:var(--farm-green)]"
+                              className="action-link"
                               type="submit"
                             >
                               Recalcular
@@ -200,7 +212,7 @@ export default async function FechamentoPage({ searchParams }: FechamentoPagePro
                             <input name="farmId" type="hidden" value={context.activeFarmId} />
                             <input name="closingId" type="hidden" value={item.id} />
                             <ConfirmSubmitButton
-                              className="rounded-md border border-[var(--wood)] px-2 py-1 font-bold text-[color:var(--wood)]"
+                              className="danger-action"
                               message="Excluir este fechamento?"
                             >
                               Excluir

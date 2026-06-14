@@ -119,7 +119,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
       referenceMonthLabel={context.referenceMonthLabel}
       title="Painel"
     >
-      <div className="space-y-4 p-4 sm:p-6">
+      <div className="dashboard-stack">
         <section className="metric-grid">
           <MetricCard
             helper="Registro de hoje"
@@ -168,7 +168,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
           />
         </section>
 
-        <section className="grid gap-3 lg:grid-cols-3">
+        <section className="quick-action-grid">
           <DashboardAction href="/producao" icon={PlusCircle} label="Registrar produção" />
           <DashboardAction href="/despesas" icon={Wallet} label="Lançar despesa" variant="wood" />
           <DashboardAction href="/racoes" icon={FlaskConical} label="Cadastrar ração" variant="outline" />
@@ -180,9 +180,14 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
           </SetupCallout>
         ) : null}
 
-        <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-          <div className="rounded-lg border border-[var(--border)] bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold">Indicadores do mês</h2>
+        <section className="dashboard-panel-grid">
+          <div className="panel-card">
+            <div className="panel-header">
+              <div>
+                <h2 className="panel-title">Indicadores do mês</h2>
+                <p className="panel-subtitle">Custos e resultado por litro no período</p>
+              </div>
+            </div>
             <div className="indicator-grid mt-4">
               <IndicatorCard
                 helper={hasProduction ? "Receita estimada menos despesas" : "Aguardando produção"}
@@ -209,9 +214,9 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
           </div>
 
           {chartRows.length > 0 ? <MonthlyChart rows={chartRows} /> : <EmptyChart />}
-        </section>
 
-        <FeedComparisonPanel brands={feedBrands} tests={feedTests} />
+          <FeedComparisonPanel brands={feedBrands} tests={feedTests} />
+        </section>
       </div>
     </AppShell>
   );

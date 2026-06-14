@@ -7,6 +7,7 @@ import {
 } from "@/app/racoes/actions";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
+import { EditModeBanner } from "@/components/ui/edit-mode-banner";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
@@ -55,7 +56,7 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
       referenceMonthLabel={context.referenceMonthLabel}
       title="Rações"
     >
-      <div className="grid gap-5 p-5 sm:p-8 xl:grid-cols-[1fr_0.85fr]">
+      <div className="grid gap-5 xl:grid-cols-[1fr_0.85fr]">
         <PageCard
           description="Cadastre marcas e compare custo, aumento de litros e lucro adicional por período."
           title={editingBrand ? "Editar marca de ração" : "Nova marca de ração"}
@@ -63,6 +64,15 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
           <form action={submitFeedBrandForm} className="grid gap-4">
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             {editingBrand ? <input name="feedBrandId" type="hidden" value={editingBrand.id} /> : null}
+            {editingBrand ? (
+              <EditModeBanner
+                cancelHref={`/racoes?${baseQuery}`}
+                entity="Marca de ração selecionada"
+                summary={`${editingBrand.name} - ${
+                  editingBrand.pricePerKg !== null ? formatCurrency(editingBrand.pricePerKg) : "sem preço por kg"
+                }`}
+              />
+            ) : null}
             <FormField label="Nome da marca">
               <input
                 className="field"
@@ -134,7 +144,7 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
               </button>
               {editingBrand ? (
                 <Link
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[var(--border)] px-4 font-black text-[color:var(--farm-green)]"
+                  className="edit-cancel-link inline-flex min-h-12 items-center justify-center"
                   href={`/racoes?${baseQuery}`}
                 >
                   Cancelar
@@ -151,6 +161,13 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
           <form action={submitFeedTestForm} className="grid gap-4">
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             {editingTest ? <input name="feedTestId" type="hidden" value={editingTest.id} /> : null}
+            {editingTest ? (
+              <EditModeBanner
+                cancelHref={`/racoes?${baseQuery}`}
+                entity="Teste de ração selecionado"
+                summary={`${editingTest.label} - ${editingTest.startDate} a ${editingTest.endDate}`}
+              />
+            ) : null}
 
             <FormField label="Nome do teste">
               <input
@@ -283,7 +300,7 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
               </button>
               {editingTest ? (
                 <Link
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[var(--border)] px-4 font-black text-[color:var(--farm-green)]"
+                  className="edit-cancel-link inline-flex min-h-12 items-center justify-center"
                   href={`/racoes?${baseQuery}`}
                 >
                   Cancelar
@@ -313,9 +330,9 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
                         {brand.manufacturer ?? "Fabricante não informado"}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="row-actions">
                       <Link
-                        className="rounded-md border border-[var(--border)] px-2 py-1 text-sm font-bold text-[color:var(--farm-green)]"
+                        className="action-link"
                         href={`/racoes?${baseQuery}&editFeedBrandId=${brand.id}`}
                       >
                         Editar
@@ -324,7 +341,7 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
                         <input name="farmId" type="hidden" value={context.activeFarmId} />
                         <input name="feedBrandId" type="hidden" value={brand.id} />
                         <ConfirmSubmitButton
-                          className="rounded-md border border-[var(--wood)] px-2 py-1 text-sm font-bold text-[color:var(--wood)]"
+                          className="danger-action"
                           message="Excluir esta marca de ração?"
                         >
                           Excluir
@@ -364,7 +381,7 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
                         {test.testName} | {test.startDate} a {test.endDate}
                       </p>
                     </div>
-                    <div className="flex flex-wrap justify-end gap-2">
+                    <div className="row-actions flex-wrap">
                       <span
                         className={
                           test.compensated === "yes"
@@ -375,7 +392,7 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
                         {test.compensated === "yes" ? "Compensou" : test.compensated === "no" ? "Não compensou" : "Empatou"}
                       </span>
                       <Link
-                        className="rounded-md border border-[var(--border)] px-2 py-1 text-sm font-bold text-[color:var(--farm-green)]"
+                        className="action-link"
                         href={`/racoes?${baseQuery}&editFeedTestId=${test.id}`}
                       >
                         Editar
@@ -384,7 +401,7 @@ export default async function RacoesPage({ searchParams }: RacoesPageProps) {
                         <input name="farmId" type="hidden" value={context.activeFarmId} />
                         <input name="feedTestId" type="hidden" value={test.id} />
                         <ConfirmSubmitButton
-                          className="rounded-md border border-[var(--wood)] px-2 py-1 text-sm font-bold text-[color:var(--wood)]"
+                          className="danger-action"
                           message="Excluir este teste de ração?"
                         >
                           Excluir

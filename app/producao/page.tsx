@@ -2,6 +2,7 @@ import Link from "next/link";
 import { submitDeleteProductionForm, submitProductionForm } from "@/app/producao/actions";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
+import { EditModeBanner } from "@/components/ui/edit-mode-banner";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
@@ -44,7 +45,7 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
       referenceMonthLabel={context.referenceMonthLabel}
       title="Registrar produção"
     >
-      <div className="grid gap-5 p-5 sm:p-8 xl:grid-cols-[1fr_0.85fr]">
+      <div className="grid gap-5 xl:grid-cols-[1fr_0.85fr]">
         <PageCard
           description={`Período do ciclo: ${formatDateRange(range.startDate, range.endDate)}. Se a data já existir, use editar na lista para alterar com controle de fechamento.`}
           title={editingProduction ? "Editar produção" : "Lançamento do dia"}
@@ -52,6 +53,13 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
           <form action={submitProductionForm} className="grid gap-4">
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             {editingProduction ? <input name="productionId" type="hidden" value={editingProduction.id} /> : null}
+            {editingProduction ? (
+              <EditModeBanner
+                cancelHref={`/producao?${baseQuery}`}
+                entity="Produção selecionada"
+                summary={`${editingProduction.date} - ${formatLiters(editingProduction.liters)}`}
+              />
+            ) : null}
             <div className="grid gap-4 md:grid-cols-2">
               <FormField label="Data">
                 <input
@@ -112,7 +120,7 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
               </button>
               {editingProduction ? (
                 <Link
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[var(--border)] px-4 font-black text-[color:var(--farm-green)]"
+                  className="edit-cancel-link inline-flex min-h-12 items-center justify-center"
                   href={`/producao?${baseQuery}`}
                 >
                   Cancelar
@@ -149,9 +157,9 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
                         {formatLiters(production.liters)}
                       </td>
                       <td className="border-t border-[var(--border)] px-3 py-2">
-                        <div className="flex justify-end gap-2">
+                        <div className="row-actions">
                           <Link
-                            className="rounded-md border border-[var(--border)] px-2 py-1 font-bold text-[color:var(--farm-green)]"
+                            className="action-link"
                             href={`/producao?${baseQuery}&editProductionId=${production.id}`}
                           >
                             Editar
@@ -160,7 +168,7 @@ export default async function ProducaoPage({ searchParams }: ProducaoPageProps) 
                             <input name="farmId" type="hidden" value={context.activeFarmId} />
                             <input name="productionId" type="hidden" value={production.id} />
                             <ConfirmSubmitButton
-                              className="rounded-md border border-[var(--wood)] px-2 py-1 font-bold text-[color:var(--wood)]"
+                              className="danger-action"
                               message="Excluir este registro de produção?"
                             >
                               Excluir

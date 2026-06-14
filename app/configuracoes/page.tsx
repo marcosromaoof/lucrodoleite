@@ -2,6 +2,7 @@ import Link from "next/link";
 import { submitDeleteFarmForm, submitFarmForm } from "@/app/configuracoes/actions";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
+import { EditModeBanner } from "@/components/ui/edit-mode-banner";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
@@ -31,13 +32,20 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
       referenceMonthLabel={context.referenceMonthLabel}
       title="Configurações"
     >
-      <div className="grid gap-5 p-5 sm:p-8 xl:grid-cols-[1fr_0.75fr]">
+      <div className="grid gap-5 xl:grid-cols-[1fr_0.75fr]">
         <PageCard
           description="Cadastre a fazenda, preço padrão do leite e ciclo de fechamento do laticínio. Exemplo 25 a 24 para notas que fecham fora do mês civil."
           title={editingFarm ? "Editar fazenda" : "Dados da fazenda"}
         >
           <form action={submitFarmForm} className="grid gap-4">
             {editingFarm ? <input name="farmId" type="hidden" value={editingFarm.id} /> : null}
+            {editingFarm ? (
+              <EditModeBanner
+                cancelHref={`/configuracoes?${baseQuery}`}
+                entity="Fazenda selecionada"
+                summary={`${editingFarm.name} - ciclo dia ${editingFarm.closingCycleStartDay} a ${editingFarm.closingCycleEndDay}`}
+              />
+            ) : null}
             <FormField label="Nome da fazenda">
               <input
                 className="field"
@@ -133,7 +141,7 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
               </button>
               {editingFarm ? (
                 <Link
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[var(--border)] px-4 font-black text-[color:var(--farm-green)]"
+                  className="edit-cancel-link inline-flex min-h-12 items-center justify-center"
                   href={`/configuracoes?${baseQuery}`}
                 >
                   Cancelar
@@ -159,9 +167,9 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
                         {[farm.city, farm.state].filter(Boolean).join(" - ") || "Localidade não informada"}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="row-actions">
                       <Link
-                        className="rounded-md border border-[var(--border)] px-2 py-1 text-sm font-bold text-[color:var(--farm-green)]"
+                        className="action-link"
                         href={`/configuracoes?${baseQuery}&editFarmId=${farm.id}`}
                       >
                         Editar
@@ -169,7 +177,7 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
                       <form action={submitDeleteFarmForm}>
                         <input name="farmId" type="hidden" value={farm.id} />
                         <ConfirmSubmitButton
-                          className="rounded-md border border-[var(--wood)] px-2 py-1 text-sm font-bold text-[color:var(--wood)]"
+                          className="danger-action"
                           message="Excluir esta fazenda? Só será permitido se não houver dados vinculados."
                         >
                           Excluir

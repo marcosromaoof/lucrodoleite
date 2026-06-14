@@ -3,6 +3,7 @@ import { submitDeleteExpenseForm, submitExpenseForm } from "@/app/despesas/actio
 import { AppShell } from "@/components/app-shell/app-shell";
 import { ExpenseCategoryFields } from "@/components/expenses/expense-category-fields";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
+import { EditModeBanner } from "@/components/ui/edit-mode-banner";
 import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
@@ -53,7 +54,7 @@ export default async function DespesasPage({ searchParams }: DespesasPageProps) 
       referenceMonthLabel={context.referenceMonthLabel}
       title="Despesas"
     >
-      <div className="grid gap-5 p-5 sm:p-8 xl:grid-cols-[1fr_0.85fr]">
+      <div className="grid gap-5 xl:grid-cols-[1fr_0.85fr]">
         <PageCard
           description={`Cadastre despesas reais do ciclo ${formatDateRange(range.startDate, range.endDate)}. Em categorias elegíveis, informe volumes e valor unitário.`}
           title={editingExpense ? "Editar despesa" : "Nova despesa"}
@@ -61,6 +62,13 @@ export default async function DespesasPage({ searchParams }: DespesasPageProps) 
           <form action={submitExpenseForm} className="grid gap-4">
             <input name="farmId" type="hidden" value={context.activeFarmId} />
             {editingExpense ? <input name="expenseId" type="hidden" value={editingExpense.id} /> : null}
+            {editingExpense ? (
+              <EditModeBanner
+                cancelHref={`/despesas?${baseQuery}`}
+                entity="Despesa selecionada"
+                summary={`${editingExpense.date} - ${editingExpense.category} - ${formatCurrency(editingExpense.amount)}`}
+              />
+            ) : null}
             <div className="grid gap-4 md:grid-cols-2">
               <FormField label="Data">
                 <input
@@ -153,7 +161,7 @@ export default async function DespesasPage({ searchParams }: DespesasPageProps) 
               </button>
               {editingExpense ? (
                 <Link
-                  className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[var(--border)] px-4 font-black text-[color:var(--farm-green)]"
+                  className="edit-cancel-link inline-flex min-h-12 items-center justify-center"
                   href={`/despesas?${baseQuery}`}
                 >
                   Cancelar
@@ -212,9 +220,9 @@ export default async function DespesasPage({ searchParams }: DespesasPageProps) 
                         {formatCurrency(expense.amount)}
                       </td>
                       <td className="border-t border-[var(--border)] px-3 py-2">
-                        <div className="flex justify-end gap-2">
+                        <div className="row-actions">
                           <Link
-                            className="rounded-md border border-[var(--border)] px-2 py-1 font-bold text-[color:var(--farm-green)]"
+                            className="action-link"
                             href={`/despesas?${baseQuery}&editExpenseId=${expense.id}`}
                           >
                             Editar
@@ -223,7 +231,7 @@ export default async function DespesasPage({ searchParams }: DespesasPageProps) 
                             <input name="farmId" type="hidden" value={context.activeFarmId} />
                             <input name="expenseId" type="hidden" value={expense.id} />
                             <ConfirmSubmitButton
-                              className="rounded-md border border-[var(--wood)] px-2 py-1 font-bold text-[color:var(--wood)]"
+                              className="danger-action"
                               message="Excluir esta despesa?"
                             >
                               Excluir

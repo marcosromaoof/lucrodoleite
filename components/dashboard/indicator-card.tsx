@@ -15,14 +15,16 @@ export function IndicatorCard({ icon: Icon, label, helper, negative = false, ton
       <div>
         <Icon
           aria-hidden="true"
-          className={tone === "green" ? "mx-auto text-[color:var(--farm-green)]" : "mx-auto text-[color:var(--wood)]"}
-          size={43}
+          className={tone === "green" ? "text-[color:var(--farm-green)]" : "text-[color:var(--wood)]"}
+          size={38}
         />
-        <p className="mt-3 text-sm font-semibold leading-5">{label}</p>
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-black leading-5">{label}</p>
         <p className={`indicator-value ${negative ? "financial-negative" : "text-[color:var(--farm-green)]"}`}>
           {value}
         </p>
-        <p className="mt-2 text-xs text-[color:var(--muted)]">{helper}</p>
+        <p className="mt-1 text-xs leading-4 text-[color:var(--muted)]">{helper}</p>
       </div>
     </div>
   );
