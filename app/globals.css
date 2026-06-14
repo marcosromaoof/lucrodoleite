@@ -430,6 +430,22 @@ button.topbar-icon-button {
   color: var(--wood);
 }
 
+.expense-filter-grid {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid rgba(216, 209, 193, 0.78);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.56);
+  padding: 0.85rem;
+}
+
+.expense-filter-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 0.65rem;
+}
+
 code {
   border-radius: 6px;
   background: rgba(13, 77, 45, 0.08);
@@ -549,7 +565,7 @@ code {
   left: 0.75rem;
   z-index: 40;
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.2rem;
   border: 1px solid rgba(216, 209, 193, 0.92);
   border-radius: 14px;
@@ -558,7 +574,8 @@ code {
   padding: 0.35rem;
 }
 
-.mobile-tabbar a {
+.mobile-tabbar a,
+.mobile-more summary {
   display: grid;
   min-height: 48px;
   place-items: center;
@@ -570,14 +587,53 @@ code {
   font-weight: 800;
 }
 
-.mobile-tabbar a span {
+.mobile-more {
+  position: relative;
+}
+
+.mobile-more summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.mobile-more summary::-webkit-details-marker {
+  display: none;
+}
+
+.mobile-more-menu {
+  position: absolute;
+  right: 0;
+  bottom: 58px;
+  display: grid;
+  min-width: 178px;
+  gap: 0.25rem;
+  border: 1px solid rgba(216, 209, 193, 0.92);
+  border-radius: 12px;
+  background: rgba(255, 253, 248, 0.98);
+  box-shadow: 0 18px 46px rgba(19, 35, 24, 0.2);
+  padding: 0.4rem;
+}
+
+.mobile-more-menu a {
+  min-height: 40px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  place-items: center start;
+  gap: 0.5rem;
+  padding: 0 0.65rem;
+  text-align: left;
+}
+
+.mobile-tabbar a span,
+.mobile-more summary span,
+.mobile-more-menu a span {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.mobile-tabbar .mobile-tab-active {
+.mobile-tabbar .mobile-tab-active,
+.mobile-more-active {
   background: rgba(13, 77, 45, 0.12);
   color: var(--farm-green);
 }
@@ -612,6 +668,16 @@ code {
   .dashboard-panel-grid {
     grid-template-columns: minmax(260px, 0.76fr) minmax(360px, 1.05fr) minmax(400px, 1.18fr);
     align-items: stretch;
+  }
+
+  .expense-filter-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  .expense-filter-actions {
+    grid-column: span 3;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 }
 
@@ -683,6 +749,10 @@ code {
   }
 
   .quick-action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .expense-filter-actions {
     grid-template-columns: 1fr;
   }
 }

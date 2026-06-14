@@ -14,11 +14,12 @@ Data: 2026-06-14
 - Indicadores, grafico e comparativo de racoes reorganizados em paineis alinhados.
 - Telas de cadastro exibem faixa explicita de modo `Editando`, resumo do registro e acao `Cancelar edicao`.
 - Botoes `Editar` e `Excluir` padronizados nas listas.
+- Barra inferior mobile reorganizada com atalhos principais e menu `Mais`.
+- Tela de despesas com filtros por categoria, fornecedor, marca de racao e faixa de valor.
 
 ## Pendencias funcionais para backlog
 
-- Barra inferior mobile: a base esta implementada, mas ainda precisa de uma experiencia avancada para telas com muitos itens, como agrupamento `Mais` ou menu expandido.
-- Filtros avancados de despesas: periodo livre, categoria, fornecedor, marca de racao e faixa de valor.
+- Filtros avancados de despesas: falta adicionar periodo livre fora do ciclo atual e persistencia desses filtros nas exportacoes.
 - Vinculo de producao com teste de racao: hoje o teste calcula medias informadas; falta opcao de associar producoes reais diretamente ao teste.
 - Permissoes por papel: `owner`, administrador e operador ainda precisam de telas de convite, troca de papel e remocao de membros.
 - Relatorios avancados: anual, comparativo entre periodos, backup completo e anexos da fazenda.

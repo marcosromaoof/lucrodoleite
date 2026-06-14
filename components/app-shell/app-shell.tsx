@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, CalendarDays, LogOut, Milk, RefreshCcw } from "lucide-react";
+import { Bell, CalendarDays, LogOut, Milk, MoreHorizontal, RefreshCcw } from "lucide-react";
 import { signOut } from "@/auth";
 import { getDatabaseStatusLabel, isDatabaseConfigured } from "@/lib/app/environment";
 import { navigationItems } from "@/lib/app/navigation";
@@ -31,6 +31,10 @@ export async function AppShell({
   const session = await getOptionalSession();
   const activeFarm = farms.find((farm) => farm.id === activeFarmId) ?? null;
   const userInitials = getInitials(session?.user?.name ?? session?.user?.email ?? "LL");
+  const mobilePrimaryHrefs = new Set(["/painel", "/producao", "/despesas", "/racoes"]);
+  const mobilePrimaryItems = navigationItems.filter((item) => mobilePrimaryHrefs.has(item.href));
+  const mobileMoreItems = navigationItems.filter((item) => !mobilePrimaryHrefs.has(item.href));
+  const mobileMoreActive = mobileMoreItems.some((item) => item.href === activeHref);
 
   async function signOutAction() {
     "use server";
@@ -165,7 +169,7 @@ export async function AppShell({
         </section>
 
         <nav className="mobile-tabbar" aria-label="Navegação principal">
-          {navigationItems.map((item) => {
+          {mobilePrimaryItems.map((item) => {
             const Icon = item.icon;
             const active = item.href === activeHref;
 
@@ -176,6 +180,25 @@ export async function AppShell({
               </Link>
             );
           })}
+          <details className={`mobile-more ${mobileMoreActive ? "mobile-tab-active" : ""}`}>
+            <summary>
+              <MoreHorizontal aria-hidden="true" size={17} />
+              <span>Mais</span>
+            </summary>
+            <div className="mobile-more-menu">
+              {mobileMoreItems.map((item) => {
+                const Icon = item.icon;
+                const active = item.href === activeHref;
+
+                return (
+                  <Link className={active ? "mobile-more-active" : ""} href={item.href} key={item.href}>
+                    <Icon aria-hidden="true" size={16} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </details>
         </nav>
       </div>
     </main>
