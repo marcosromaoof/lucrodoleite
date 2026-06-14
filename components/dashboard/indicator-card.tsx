@@ -4,11 +4,12 @@ type IndicatorCardProps = {
   icon: LucideIcon;
   label: string;
   helper: string;
+  negative?: boolean;
   tone?: "green" | "wood";
   value: string;
 };
 
-export function IndicatorCard({ icon: Icon, label, helper, tone = "green", value }: IndicatorCardProps) {
+export function IndicatorCard({ icon: Icon, label, helper, negative = false, tone = "green", value }: IndicatorCardProps) {
   return (
     <div className="grid min-h-48 place-items-center border-r border-[var(--border)] px-4 text-center last:border-r-0">
       <div>
@@ -18,7 +19,9 @@ export function IndicatorCard({ icon: Icon, label, helper, tone = "green", value
           size={43}
         />
         <p className="mt-3 text-sm font-semibold leading-5">{label}</p>
-        <p className="mt-3 text-3xl font-black text-[color:var(--farm-green)]">{value}</p>
+        <p className={`indicator-value ${negative ? "financial-negative" : "text-[color:var(--farm-green)]"}`}>
+          {value}
+        </p>
         <p className="mt-2 text-xs text-[color:var(--muted)]">{helper}</p>
       </div>
     </div>

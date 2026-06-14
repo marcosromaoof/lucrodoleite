@@ -31,8 +31,8 @@ export function MonthlyChart({ rows }: MonthlyChartProps) {
           const height = maxLiters > 0 ? Math.max((row.liters / maxLiters) * 100, 8) : 8;
 
           return (
-            <div className="grid gap-1" key={row.date} title={`${row.date}: ${formatLiters(row.liters)}`}>
-              <div className="rounded-t-sm bg-[var(--chart-muted)]" style={{ height: `${height}%` }} />
+            <div className="flex h-full items-end" key={row.date} title={`${row.date}: ${formatLiters(row.liters)}`}>
+              <div className="w-full rounded-t-sm bg-[var(--chart-muted)]" style={{ height: `${height}%` }} />
             </div>
           );
         })}

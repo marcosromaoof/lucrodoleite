@@ -100,6 +100,8 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
   const hasFarm = Boolean(context.activeFarm);
   const hasProduction = productionSummary.recordCount > 0;
   const hasEstimate = pricePerLiter > 0 && hasProduction;
+  const hasLoss = hasEstimate && estimate.estimatedProfit < 0;
+  const hasLossPerLiter = hasProduction && estimate.estimatedResultPerLiter < 0;
 
   return (
     <AppShell
@@ -112,7 +114,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
       title="Painel"
     >
       <div className="space-y-4 p-4 sm:p-6">
-        <section className="grid gap-3 xl:grid-cols-6">
+        <section className="metric-grid">
           <MetricCard
             helper="Registro de hoje"
             icon={Milk}
@@ -145,7 +147,8 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
           <MetricCard
             helper="Receita estimada - despesas"
             icon={HandCoins}
-            label="Lucro estimado"
+            label="Resultado estimado"
+            negative={hasLoss}
             status={hasEstimate ? "Calculado" : hasProduction ? "Aguardando preço" : "Aguardando produção"}
             value={hasEstimate ? formatCurrency(estimate.estimatedProfit) : "--"}
           />
@@ -153,6 +156,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
             helper="Lucro estimado por litro"
             icon={CircleDollarSign}
             label="Resultado por litro"
+            negative={hasLossPerLiter}
             status={hasProduction ? "Calculado" : "Sem produção"}
             value={hasProduction ? formatCurrency(estimate.estimatedResultPerLiter) : "--"}
           />
@@ -178,6 +182,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
                 helper={hasProduction ? "Receita estimada menos despesas" : "Aguardando produção"}
                 icon={CircleDollarSign}
                 label="Resultado líquido por litro"
+                negative={hasLossPerLiter}
                 value={hasProduction ? formatCurrency(estimate.estimatedResultPerLiter) : "--"}
               />
               <IndicatorCard
@@ -191,6 +196,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
                 helper={hasProduction ? "Preço por litro menos ração" : "Aguardando produção"}
                 icon={Sprout}
                 label="Resultado livre após ração"
+                negative={pricePerLiter > 0 && hasProduction && resultAfterFeedPerLiter < 0}
                 value={pricePerLiter > 0 && hasProduction ? formatCurrency(resultAfterFeedPerLiter) : "--"}
               />
             </div>

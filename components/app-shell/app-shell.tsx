@@ -79,12 +79,12 @@ export function AppShell({
           </div>
         </aside>
 
-        <section className="flex-1">
+        <section className="min-w-0 flex-1">
           <header className="relative min-h-[154px] overflow-hidden border-b border-[var(--border)] bg-[var(--pasture)]">
             <div className="absolute inset-0 bg-[url('/assets/pasture-header.png')] bg-cover bg-center opacity-95" />
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,248,0.96)_0%,rgba(255,253,248,0.74)_36%,rgba(255,253,248,0.28)_100%)]" />
             <div className="relative z-10 flex flex-col justify-between gap-4 px-5 py-5 sm:px-8 lg:flex-row lg:items-start">
-              <form className="flex flex-col gap-4 md:flex-row md:items-center" method="get">
+              <form className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-center" method="get">
                 <label className="sr-only" htmlFor="farmId">
                   Fazenda
                 </label>

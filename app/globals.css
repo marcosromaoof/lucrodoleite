@@ -31,6 +31,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
 }
 
 button,
@@ -94,6 +95,12 @@ code {
   text-align: center;
 }
 
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.75rem;
+}
+
 .metric-icon {
   margin: 1rem auto 0;
 }
@@ -101,11 +108,24 @@ code {
 .metric-value {
   margin-top: 0.75rem;
   min-height: 2.25rem;
-  overflow-wrap: anywhere;
-  font-size: 1.65rem;
+  white-space: nowrap;
+  font-size: clamp(1.35rem, 1.6vw, 1.8rem);
   font-weight: 900;
   letter-spacing: 0;
   line-height: 1.12;
+}
+
+.indicator-value {
+  margin-top: 0.75rem;
+  white-space: nowrap;
+  font-size: clamp(1.4rem, 2vw, 1.9rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.12;
+}
+
+.financial-negative {
+  color: var(--wood);
 }
 
 .metric-icon-green {
