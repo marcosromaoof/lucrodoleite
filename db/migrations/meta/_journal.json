@@ -36,6 +36,13 @@
       "when": 1781453200000,
       "tag": "0004_restore_email_farm_memberships",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781453700000,
+      "tag": "0005_link_legacy_orphan_farms",
+      "breakpoints": true
     }
   ]
 }
