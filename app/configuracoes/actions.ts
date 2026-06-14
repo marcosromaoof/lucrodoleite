@@ -5,7 +5,13 @@ import { getDb } from "@/db/client";
 import { requireAuthenticatedFarmAccess, requireAuthenticatedUser, requireDatabaseConfigured } from "@/lib/actions/guards";
 import { success, validationError, type ActionState } from "@/lib/actions/action-state";
 import { readInteger, readNumber, readRequiredString, readString } from "@/lib/forms/form-data";
-import { createFarmForOwner, deleteFarm, updateFarm } from "@/lib/repositories/farms";
+import {
+  claimLegacyOrphanFarmsForUser,
+  claimRecoverableLegacyFarmsForEmptyUser,
+  createFarmForOwner,
+  deleteFarm,
+  updateFarm,
+} from "@/lib/repositories/farms";
 import { farmSchema } from "@/lib/validations/farm";
 
 function parseFarmForm(formData: FormData) {
@@ -115,4 +121,24 @@ export async function submitFarmForm(formData: FormData): Promise<void> {
 
 export async function submitDeleteFarmForm(formData: FormData): Promise<void> {
   await deleteFarmAction(formData);
+}
+
+export async function recoverLegacyFarmDataAction(): Promise<void> {
+  const databaseGuard = requireDatabaseConfigured();
+
+  if (databaseGuard) {
+    return;
+  }
+
+  const authGuard = await requireAuthenticatedUser();
+
+  if (authGuard.error) {
+    return;
+  }
+
+  const db = getDb();
+
+  await claimLegacyOrphanFarmsForUser(db, authGuard.user.id);
+  await claimRecoverableLegacyFarmsForEmptyUser(db, authGuard.user.id);
+  revalidatePath("/", "layout");
 }

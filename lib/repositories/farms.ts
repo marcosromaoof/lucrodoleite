@@ -12,7 +12,7 @@ import {
 } from "@/db/schema";
 import type { farmSchema } from "@/lib/validations/farm";
 import type { AppDatabase } from "./types";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 export type CreateFarmInput = z.infer<typeof farmSchema>;
@@ -112,6 +112,91 @@ export async function listFarmsForUser(db: AppDatabase, userId: string): Promise
         ? null
         : Number(farm.defaultPricePerLiter),
   }));
+}
+
+export async function listLegacyOrphanFarms(db: AppDatabase): Promise<FarmOption[]> {
+  const rows = await db
+    .select({
+      city: farms.city,
+      closingCycleEndDay: farms.closingCycleEndDay,
+      closingCycleStartDay: farms.closingCycleStartDay,
+      defaultPricePerLiter: farms.defaultPricePerLiter,
+      id: farms.id,
+      milkCompany: farms.milkCompany,
+      name: farms.name,
+      ownerName: farms.ownerName,
+      state: farms.state,
+    })
+    .from(farms)
+    .where(sql`not exists (select 1 from ${farmMembers} where ${farmMembers.farmId} = ${farms.id})`)
+    .orderBy(asc(farms.createdAt));
+
+  return rows.map((farm) => ({
+    ...farm,
+    defaultPricePerLiter:
+      farm.defaultPricePerLiter === null || farm.defaultPricePerLiter === undefined
+        ? null
+        : Number(farm.defaultPricePerLiter),
+  }));
+}
+
+export async function claimLegacyOrphanFarmsForUser(db: AppDatabase, userId: string) {
+  const orphanFarms = await listLegacyOrphanFarms(db);
+
+  if (orphanFarms.length === 0) {
+    return { claimed: 0 };
+  }
+
+  const inserted = await db
+    .insert(farmMembers)
+    .values(
+      orphanFarms.map((farm) => ({
+        farmId: farm.id,
+        role: "owner",
+        userId,
+      })),
+    )
+    .onConflictDoNothing({
+      target: [farmMembers.farmId, farmMembers.userId],
+    })
+    .returning({ id: farmMembers.id });
+
+  return { claimed: inserted.length };
+}
+
+export async function claimRecoverableLegacyFarmsForEmptyUser(db: AppDatabase, userId: string) {
+  const currentFarms = await listFarmsForUser(db, userId);
+
+  if (currentFarms.length > 0) {
+    return { claimed: 0 };
+  }
+
+  const candidates = await db
+    .select({
+      id: farms.id,
+    })
+    .from(farms)
+    .where(sql`not exists (select 1 from ${farmMembers} where ${farmMembers.farmId} = ${farms.id} and ${farmMembers.userId} = ${userId})`);
+
+  if (candidates.length === 0) {
+    return { claimed: 0 };
+  }
+
+  const inserted = await db
+    .insert(farmMembers)
+    .values(
+      candidates.map((farm) => ({
+        farmId: farm.id,
+        role: "owner",
+        userId,
+      })),
+    )
+    .onConflictDoNothing({
+      target: [farmMembers.farmId, farmMembers.userId],
+    })
+    .returning({ id: farmMembers.id });
+
+  return { claimed: inserted.length };
 }
 
 export async function getFarmForUser(db: AppDatabase, farmId: string, userId: string): Promise<FarmOption | null> {

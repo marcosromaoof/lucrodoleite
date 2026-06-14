@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Bell, CalendarDays, LogOut, Milk, MoreHorizontal, RefreshCcw } from "lucide-react";
+import Image from "next/image";
+import { Bell, Building2, CalendarDays, ChevronDown, LogOut, MoreHorizontal, RefreshCcw } from "lucide-react";
 import { signOut } from "@/auth";
 import { getDatabaseStatusLabel, isDatabaseConfigured } from "@/lib/app/environment";
 import { navigationItems } from "@/lib/app/navigation";
@@ -21,11 +22,8 @@ type AppShellProps = {
 export async function AppShell({
   activeFarmId = "",
   activeHref,
-  title,
-  eyebrow,
   farms = [],
   referenceMonth = "",
-  referenceMonthLabel = "Mês de referência",
   children,
 }: AppShellProps) {
   const databaseConfigured = isDatabaseConfigured();
@@ -48,15 +46,14 @@ export async function AppShell({
       <div className="app-frame">
         <aside className="app-sidebar">
           <Link className="brand-panel" href="/painel">
-            <div className="brand-mark">
-              <Milk aria-hidden="true" size={42} strokeWidth={2.4} />
-            </div>
-            <p className="brand-title">
-              Lucro
-              <br />
-              do Leite
-            </p>
-            <p className="brand-ribbon">Gestão que dá resultado</p>
+            <Image
+              alt="Lucro do Leite"
+              className="brand-logo"
+              height={160}
+              priority
+              src="/assets/logo-lucro-do-leite.png"
+              width={192}
+            />
           </Link>
 
           <nav className="sidebar-nav">
@@ -136,13 +133,8 @@ export async function AppShell({
               </form>
 
               <div className="topbar-tools">
-                <span className="status-chip">
-                  {eyebrow}: {title}
-                </span>
-                <span className="status-chip status-chip-secondary">
-                  {referenceMonthLabel}
-                </span>
-                <span className="status-chip">
+                <span className="status-chip status-chip-bank">
+                  <Building2 aria-hidden="true" size={17} />
                   Banco:{" "}
                   <span className={databaseConfigured ? "text-[color:var(--success)]" : "text-[color:var(--warning)]"}>
                     {getDatabaseStatusLabel()}
@@ -157,6 +149,7 @@ export async function AppShell({
                 <span className="topbar-avatar" title={session?.user?.email ?? session?.user?.name ?? "Usuário"}>
                   {userInitials}
                 </span>
+                <ChevronDown aria-hidden="true" className="topbar-user-chevron" size={16} />
                 <form
                   action={signOutAction}
                   data-feedback-pending="Saindo da conta..."
@@ -164,11 +157,12 @@ export async function AppShell({
                 >
                   <button
                     aria-label="Sair"
-                    className="topbar-icon-button"
+                    className="topbar-signout"
                     title="Sair"
                     type="submit"
                   >
                     <LogOut aria-hidden="true" size={18} />
+                    <span>Sair</span>
                   </button>
                 </form>
               </div>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { submitDeleteFarmForm, submitFarmForm } from "@/app/configuracoes/actions";
+import { recoverLegacyFarmDataAction, submitDeleteFarmForm, submitFarmForm } from "@/app/configuracoes/actions";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { EditModeBanner } from "@/components/ui/edit-mode-banner";
@@ -7,9 +7,11 @@ import { FormField } from "@/components/ui/form-field";
 import { PageCard } from "@/components/ui/page-card";
 import { SetupCallout } from "@/components/ui/setup-callout";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { getDb } from "@/db/client";
 import { getOperationalContext } from "@/lib/app/operational-context";
 import { getSearchParam, type PageSearchParams } from "@/lib/app/search-params";
 import { formatCurrency } from "@/lib/formatters/number";
+import { listLegacyOrphanFarms } from "@/lib/repositories/farms";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,8 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
   const editFarmId = await getSearchParam(searchParams, "editFarmId");
   const editingFarm = context.farms.find((farm) => farm.id === editFarmId) ?? null;
   const baseQuery = `farmId=${context.activeFarmId}&referenceMonth=${context.referenceMonth}`;
+  const legacyFarms =
+    context.databaseConfigured && context.farms.length === 0 ? await listLegacyOrphanFarms(getDb()) : [];
 
   return (
     <AppShell
@@ -162,9 +166,28 @@ export default async function ConfiguracoesPage({ searchParams }: ConfiguracoesP
 
         <PageCard title="Fazendas cadastradas">
           {context.farms.length === 0 ? (
-            <SetupCallout title="Nenhuma fazenda cadastrada">
-              Cadastre a primeira fazenda para liberar produção, vacas, despesas, rações e relatórios.
-            </SetupCallout>
+            <div className="grid gap-4">
+              <SetupCallout title={legacyFarms.length > 0 ? "Dados antigos encontrados" : "Tentar recuperar dados antigos"}>
+                <p>
+                  {legacyFarms.length > 0
+                    ? `Existem ${legacyFarms.length} fazenda(s) antigas sem usuario vinculado.`
+                    : "Se seus dados sumiram apos o login no dominio novo, use esta recuperacao para vincular registros legados a sua conta atual."}
+                </p>
+                <form
+                  action={recoverLegacyFarmDataAction}
+                  className="mt-3"
+                  data-feedback-pending="Recuperando dados antigos..."
+                  data-feedback-success="Dados recuperados. Confira a lista de fazendas."
+                >
+                  <SubmitButton className="primary-button w-full" pendingLabel="Recuperando...">
+                    Recuperar dados antigos
+                  </SubmitButton>
+                </form>
+              </SetupCallout>
+              <SetupCallout title="Nenhuma fazenda cadastrada">
+                Cadastre a primeira fazenda para liberar producao, vacas, despesas, racoes e relatorios.
+              </SetupCallout>
+            </div>
           ) : (
             <div className="grid gap-3">
               {context.farms.map((farm) => (

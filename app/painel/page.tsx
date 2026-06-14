@@ -101,9 +101,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
     totalExpenses: expenseSummary.totalAmount,
     totalLiters: productionSummary.totalLiters,
   });
-  const feedCostPerLiter = safeDivide(expenseSummary.feedAmount, productionSummary.totalLiters);
   const nutritionCostPerLiter = safeDivide(expenseSummary.nutritionAmount, productionSummary.totalLiters);
-  const resultAfterFeedPerLiter = pricePerLiter - feedCostPerLiter;
   const resultAfterNutritionPerLiter = pricePerLiter - nutritionCostPerLiter;
   const chartRows = buildChartRows(productions, expenses);
   const hasFarm = Boolean(context.activeFarm);
@@ -174,7 +172,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
         <section className="quick-action-grid">
           <DashboardAction href="/producao" icon={PlusCircle} label="Registrar produção" />
           <DashboardAction href="/despesas" icon={Wallet} label="Lançar despesa" variant="wood" />
-          <DashboardAction href="/vacas" icon={Beef} label="Avaliar vaca" variant="outline" />
+          <DashboardAction href="/racoes" icon={FlaskConical} label="Cadastrar ração" variant="outline" />
         </section>
 
         {!hasFarm ? (
@@ -212,13 +210,6 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
                 label="Lucro livre após alimentação"
                 negative={pricePerLiter > 0 && hasProduction && resultAfterNutritionPerLiter < 0}
                 value={pricePerLiter > 0 && hasProduction ? formatCurrency(resultAfterNutritionPerLiter) : "--"}
-              />
-              <IndicatorCard
-                helper={hasProduction ? "Preço por litro menos ração" : "Aguardando produção"}
-                icon={FlaskConical}
-                label="Resultado livre após ração"
-                negative={pricePerLiter > 0 && hasProduction && resultAfterFeedPerLiter < 0}
-                value={pricePerLiter > 0 && hasProduction ? formatCurrency(resultAfterFeedPerLiter) : "--"}
               />
             </div>
           </div>
